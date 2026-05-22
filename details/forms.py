@@ -58,16 +58,28 @@ class DoctorAvailabilityForm(forms.ModelForm):
 
 
 class DoctorSlotForm(forms.ModelForm):
+    max_bookings = forms.IntegerField(
+        min_value=1,
+        initial=1,
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'placeholder': 'e.g. 5'}),
+    )
+
     class Meta:
         model = DoctorSlot
         fields = ['date', 'start_time', 'end_time', 'is_present', 'max_bookings']
         widgets = {
-            'date':         forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'start_time':   forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'end_time':     forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'is_present':   forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'max_bookings': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'placeholder': 'e.g. 5'}),
+            'date':       forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time':   forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'is_present': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def clean_max_bookings(self):
+        value = self.cleaned_data.get('max_bookings')
+        if not value or value < 1:
+            return 1
+        return value
 
 
 class AppointmentForm(forms.ModelForm):
@@ -84,8 +96,8 @@ class AppointmentForm(forms.ModelForm):
         ('Depression', 'Depression'), ('Other', 'Other'),
     ]
 
-    patient_gender = forms.ChoiceField(choices=GENDER_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
-    disease        = forms.ChoiceField(choices=DISEASE_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))
+    patient_gender = forms.ChoiceField(choices=GENDER_CHOICES, required=False, widget=forms.Select(attrs={'class': 'form-select'}))
+    disease        = forms.ChoiceField(choices=DISEASE_CHOICES, required=False, widget=forms.Select(attrs={'class': 'form-select'}))
 
     class Meta:
         model = Appointment
