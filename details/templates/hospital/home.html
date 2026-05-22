@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Home page{% endblock %}
+
+{% block content %}
+<section class="hero py-5">
+    <div class="row align-items-center gy-4">
+        <div class="col-lg-6">
+            <p class="text-uppercase text-primary fw-bold small mb-3">Trusted Care</p>
+            <h1 class="display-5 fw-bold">Care Hospital</h1>
+            <p class="lead text-muted">Patient registration</p>
+            <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
+                <a class="btn btn-primary btn-lg" href="{% url 'add_patient' %}">Application</a>
+            </div>
+        </div>
+        <div class="col-lg-6 text-center">
+            <div class="hero-card p-4 bg-white rounded-4 shadow-sm">
+                <i class="bi bi-person-badge-fill display-4 text-primary"></i>
+                <h2 class="h4 mt-3">Patient registration</h2>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="py-5">
+    <div class="text-center mb-5">
+        <p class="text-uppercase text-primary fw-bold small mb-2">Our Services</p>
+        <h2 class="h1 mb-3">Modern hospital management </h2>
+        <p class="text-muted mx-auto" style="max-width: 680px;">Best services and Trusted care for your health</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-primary text-white mb-3"><i class="bi bi-journal-medical"></i></div>
+                <h3 class="h5">Patient Registration</h3>
+                <p class="text-muted">Secure patient intake with name, contact, symptoms, doctor preference and appointment date.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-danger text-white mb-3"><i class="bi bi-heart-pulse-fill"></i></div>
+                <h3 class="h5">Emergency Care</h3>
+                <p class="text-muted">24/7 emergency services with rapid response teams ready to handle critical conditions.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-success text-white mb-3"><i class="bi bi-capsule"></i></div>
+                <h3 class="h5">Pharmacy</h3>
+                <p class="text-muted">In-house pharmacy stocked with a wide range of medicines and prescription fulfillment.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-info text-white mb-3"><i class="bi bi-activity"></i></div>
+                <h3 class="h5">Diagnostics & Lab</h3>
+                <p class="text-muted">Advanced diagnostic lab for blood tests, X-rays, MRI, and other medical investigations.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-warning text-white mb-3"><i class="bi bi-person-hearts"></i></div>
+                <h3 class="h5">General Consultation</h3>
+                <p class="text-muted">Consult experienced general physicians for routine checkups, health concerns and referrals.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card service-card h-100 p-4 border-0 shadow-sm">
+                <div class="icon-circle bg-secondary text-white mb-3"><i class="bi bi-scissors"></i></div>
+                <h3 class="h5">Surgery</h3>
+                <p class="text-muted">State-of-the-art operation theatres with skilled surgeons for both elective and emergency surgeries.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

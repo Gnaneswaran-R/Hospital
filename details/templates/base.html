@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% block title %}Hospital Management System{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'details/css/style.css' %}">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-white shadow-sm sticky-top bg-white">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">
+                <i class="bi bi-hospital-fill fs-4"></i> HospitalCare
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    {% if request.resolver_match.url_name == 'home' %}
+                    <li class="nav-item"><a class="nav-link" href="#services">Services</a></li>
+                    {% endif %}
+                </ul>
+                <div class="d-flex gap-2 ms-lg-3">
+                    {% if user.is_authenticated %}
+                        {% if user.is_staff %}
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'doctors_dashboard' %}"><i class="bi bi-person-badge me-1"></i>Doctors</a>
+                        {% endif %}
+                        <a class="btn btn-secondary btn-sm" href="{% url 'logout' %}">Logout</a>
+                    {% else %}
+                        <a class="btn btn-primary btn-sm" href="{% url 'book_appointment' %}"><i class="bi bi-calendar-plus me-1"></i>Book Appointment</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{% url 'login' %}">Staff Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-5">
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="alert {% if 'error' in message.tags %}alert-danger{% elif 'warning' in message.tags %}alert-warning{% elif 'success' in message.tags %}alert-success{% else %}alert-info{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer bg-white border-top py-4">
+        <div class="container text-center text-muted small">
+            <p class="mb-1">HospitalCare &copy; {% now 'Y' %}.</p>
+            <p class="mb-0"></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+
+{% block title %}Doctor Management{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1"><i class="bi bi-person-badge-fill text-primary me-2"></i>Doctor Management</h1>
+        <p class="text-muted mb-0">Manage doctor profiles, availability, and import via Excel.</p>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">&#8592; Back to Dashboard</a>
+</div>
+
+<!-- Stats Cards -->
+<div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+    <div class="col">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="bi bi-people-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-uppercase text-muted small mb-1">Total Doctors</p>
+                    <h2 class="h3 mb-0" id="stat-total-doctors">{{ total_doctors }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                    <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-uppercase text-muted small mb-1">Available</p>
+                    <h2 class="h3 mb-0 text-success" id="stat-available-doctors">{{ available_doctors }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card border-0 shadow-sm p-4 h-100">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="bi bi-calendar-x-fill text-warning fs-4"></i>
+                </div>
+                <div>
+                    <p class="text-uppercase text-muted small mb-1">On Leave</p>
+                    <h2 class="h3 mb-0 text-warning" id="stat-onleave-doctors">{{ on_leave_doctors }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="doctorTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="list-tab" data-bs-toggle="tab" data-bs-target="#list-panel" type="button" role="tab">
+            <i class="bi bi-table me-1"></i> Doctor List
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add-panel" type="button" role="tab">
+            <i class="bi bi-person-plus-fill me-1"></i> Add Doctor
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="import-tab" data-bs-toggle="tab" data-bs-target="#import-panel" type="button" role="tab">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Import Excel
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="doctorTabsContent">
+
+    <!-- ── Tab 1: Doctor List ── -->
+    <div class="tab-pane fade show active" id="list-panel" role="tabpanel">
+
+        <!-- Filters -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Search Doctor</label>
+                        <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Search by name">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Department</label>
+                        <select name="department" class="form-select">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept }}" {% if dept_filter == dept %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label">Availability</label>
+                        <select name="availability" class="form-select">
+                            <option value="">All</option>
+                            <option value="available" {% if avail_filter == 'available' %}selected{% endif %}>Available</option>
+                            <option value="unavailable" {% if avail_filter == 'unavailable' %}selected{% endif %}>Unavailable</option>
+                            <option value="on_leave" {% if avail_filter == 'on_leave' %}selected{% endif %}>On Leave</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Speciality</th>
+                            <th>Availability</th>
+                            <th>Timings</th>
+                            <th>Slots/Day</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doctor in doctors %}
+                        <tr data-doctor-id="{{ doctor.pk }}">
+                            <td class="text-muted small">{{ forloop.counter }}</td>
+                            <td><strong>Dr. {{ doctor.name }}</strong></td>
+                            <td class="doc-dept">{{ doctor.department }}</td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary doc-spec">{{ doctor.speciality }}</span></td>
+                            <td class="doc-avail">
+                                {% if doctor.availability == 'available' %}
+                                    <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Available</span>
+                                {% elif doctor.availability == 'on_leave' %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>On Leave</span>
+                                {% else %}
+                                    <span class="badge bg-danger"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Unavailable</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted doc-timing">{{ doctor.appointment_start|time:"g:i A" }} &ndash; {{ doctor.appointment_end|time:"g:i A" }}</td>
+                            <td><span class="badge bg-secondary doc-slots">{{ doctor.consultation_slots }} slots</span></td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'doctor_availability' doctor.pk %}" class="btn btn-sm btn-outline-success" title="Manage Availability"><i class="bi bi-calendar2-check"></i></a>
+                                    <a href="{% url 'edit_doctor' doctor.pk %}" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" action="{% url 'delete_doctor' doctor.pk %}" onsubmit="return confirm('Remove Dr. {{ doctor.name }}?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-person-x fs-2 d-block mb-2"></i>
+                                No doctors found. Add one manually or import via Excel.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Tab 2: Add Doctor ── -->
+    <div class="tab-pane fade" id="add-panel" role="tabpanel">
+        <div class="card border-0 shadow-sm p-4">
+            <h5 class="mb-4"><i class="bi bi-person-plus-fill text-primary me-2"></i>Add New Doctor</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Doctor Name</label>
+                        {{ add_form.name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Department</label>
+                        {{ add_form.department }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Speciality</label>
+                        {{ add_form.speciality }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Availability</label>
+                        {{ add_form.availability }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Appointment Start Time</label>
+                        {{ add_form.appointment_start }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Appointment End Time</label>
+                        {{ add_form.appointment_end }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Consultation Slots / Day</label>
+                        {{ add_form.consultation_slots }}
+                    </div>
+                </div>
+                <div class="mt-4 text-end">
+                    <button type="submit" name="add_doctor" class="btn btn-primary px-4">
+                        <i class="bi bi-plus-circle me-1"></i> Add Doctor
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Tab 3: Import Excel ── -->
+    <div class="tab-pane fade" id="import-panel" role="tabpanel">
+        <div class="row g-4">
+
+            <!-- Upload Form -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h5 class="mb-3"><i class="bi bi-upload text-success me-2"></i>Upload Excel File</h5>
+                    <p class="text-muted small mb-4">Upload an <code>.xlsx</code> file with doctor details. The first row must be a header row.</p>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Choose Excel File</label>
+                            {{ upload_form.excel_file }}
+                        </div>
+                        <button type="submit" name="upload_excel" class="btn btn-success w-100">
+                            <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Doctors
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Format Guide -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h5 class="mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Excel Format Guide</h5>
+                    <p class="text-muted small mb-3">Your Excel file must follow this exact column order:</p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm small">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Column</th>
+                                    <th>Field</th>
+                                    <th>Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>A</td><td>Name <span class="text-danger">*</span></td><td>John Smith</td></tr>
+                                <tr><td>B</td><td>Department <span class="text-danger">*</span></td><td>Cardiology</td></tr>
+                                <tr><td>C</td><td>Speciality</td><td>Cardiologist</td></tr>
+                                <tr><td>D</td><td>Availability</td><td>available / unavailable / on_leave</td></tr>
+                                <tr><td>E</td><td>Start Time</td><td>09:00</td></tr>
+                                <tr><td>F</td><td>End Time</td><td>17:00</td></tr>
+                                <tr><td>G</td><td>Slots/Day</td><td>10</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0"><span class="text-danger">*</span> Required fields. Row 1 is the header and will be skipped.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function fmtTime(t) {
+        // t is "HH:MM:SS" from Django — convert to 12h
+        if (!t) return '';
+        const [h, m] = t.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12  = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    }
+
+    function availBadge(av) {
+        if (av === 'available')
+            return '<span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Available</span>';
+        if (av === 'on_leave')
+            return '<span class="badge bg-warning text-dark"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>On Leave</span>';
+        return '<span class="badge bg-danger"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Unavailable</span>';
+    }
+
+    const sse = new EventSource('/sse/doctor-updates/');
+    sse.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // update stat cards
+        if (data.stats) {
+            document.getElementById('stat-total-doctors').textContent    = data.stats.total_doctors;
+            document.getElementById('stat-available-doctors').textContent = data.stats.available_doctors;
+            document.getElementById('stat-onleave-doctors').textContent  = data.stats.on_leave_doctors;
+        }
+
+        // update each doctor row
+        data.doctors.forEach(doc => {
+            const row = document.querySelector(`tr[data-doctor-id="${doc.id}"]`);
+            if (!row) return;
+            row.querySelector('.doc-spec').textContent    = doc.speciality;
+            row.querySelector('.doc-dept').textContent    = doc.department;
+            row.querySelector('.doc-avail').innerHTML     = availBadge(doc.availability);
+            row.querySelector('.doc-timing').innerHTML    = `${fmtTime(doc.appointment_start)} &ndash; ${fmtTime(doc.appointment_end)}`;
+            row.querySelector('.doc-slots').textContent   = `${doc.consultation_slots} slots`;
+        });
+    };
+    sse.onerror = () => sse.close();
+</script>
+{% endblock %}

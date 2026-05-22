@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+
+{% block title %}Book an Appointment{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <a href="javascript:history.back()" class="btn btn-outline-primary rounded-pill px-4 shadow-sm">
+        ← Back
+    </a>
+</div>
+
+
+
+<!-- Header -->
+<div class="text-center mb-5">
+    <h1 class="h2 fw-bold">Book an Appointment</h1>
+    <p class="text-muted">Select your speciality, choose a doctor, and pick an available slot.</p>
+</div>
+
+<!-- Step Indicator -->
+<div class="d-flex justify-content-center align-items-center gap-0 mb-5">
+    <div class="d-flex flex-column align-items-center" id="step-ind-1">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;">1</div>
+        <small class="text-primary mt-1 fw-semibold">Speciality</small>
+    </div>
+    <div class="flex-grow-1 border-top mx-2" style="max-width:80px;"></div>
+    <div class="d-flex flex-column align-items-center" id="step-ind-2">
+        <div class="rounded-circle bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;" id="step2-circle">2</div>
+        <small class="text-muted mt-1" id="step2-label">Doctor</small>
+    </div>
+    <div class="flex-grow-1 border-top mx-2" style="max-width:80px;"></div>
+    <div class="d-flex flex-column align-items-center" id="step-ind-3">
+        <div class="rounded-circle bg-light border text-muted d-flex align-items-center justify-content-center fw-bold" style="width:38px;height:38px;" id="step3-circle">3</div>
+        <small class="text-muted mt-1" id="step3-label">Slot & Details</small>
+        
+    </div>
+</div>
+
+<form method="post" id="booking-form">
+    {% csrf_token %}
+    <input type="hidden" name="doctor_id" id="selected-doctor-id">
+    <input type="hidden" name="slot_id"   id="selected-slot-id">
+
+    <!-- ── Step 1: Speciality ── -->
+    <div id="step-1">
+        <h5 class="mb-3 fw-semibold">Step 1 — Select Speciality</h5>
+        <div class="row g-3">
+            {% for spec in specialities %}
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card border speciality-card h-100 text-center p-3"
+                     style="cursor:pointer;transition:all .2s"
+                     data-speciality="{{ spec }}">
+                    <div class="mb-2 fs-2">
+                        {% if spec == 'Cardiologist' %}❤️
+                        {% elif spec == 'Neurologist' %}🧠
+                        {% elif spec == 'Cancer Specialist' %}🎗️
+                        {% elif spec == 'Orthopedic Surgeon' %}🦴
+                        {% elif spec == 'Dermatologist' %}🧴
+                        {% elif spec == 'Pediatrician' %}👶
+                        {% elif spec == 'Psychiatrist' %}🧘
+                        {% elif spec == 'Endocrinologist' %}⚗️
+                        {% elif spec == 'Gastroenterologist' %}🫁
+                        {% elif spec == 'Pulmonologist' %}🫀
+                        {% elif spec == 'Nephrologist' %}💧
+                        {% elif spec == 'Ophthalmologist' %}👁️
+                        {% elif spec == 'ENT Specialist' %}👂
+                        {% elif spec == 'General Physician' %}🩺
+                        {% else %}🏥
+                        {% endif %}
+                    </div>
+                    <p class="mb-0 fw-semibold small">{{ spec }}</p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    No available doctors at the moment. Please check back later.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ── Step 2: Doctor ── -->
+    <div id="step-2" class="d-none">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="back-to-step1">&#8592; Back</button>
+            <h5 class="mb-0 fw-semibold">Step 2 — Choose a Doctor</h5>
+        </div>
+        <div id="doctor-loading" class="text-center py-4 d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2">Loading doctors...</p>
+        </div>
+        <div class="row g-3" id="doctor-list"></div>
+    </div>
+
+    <!-- ── Step 3: Slot + Patient Details ── -->
+    <div id="step-3" class="d-none">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="back-to-step2">&#8592; Back</button>
+            <h5 class="mb-0 fw-semibold">Step 3 — Pick a Slot & Enter Details</h5>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- Slot Picker -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-clock text-primary me-2"></i>Available Slots</h6>
+                    <div id="slot-loading" class="text-center py-3 d-none">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <span class="text-muted ms-2">Loading slots...</span>
+                    </div>
+                    <div id="slot-list" class="d-flex flex-column gap-2"></div>
+                    <p id="no-slots-msg" class="text-muted small d-none">No available slots for this doctor.</p>
+                </div>
+            </div>
+
+            <!-- Patient Details Form -->
+            <div class="col-lg-6">
+                <div class="card border-0 shadow-sm p-4 h-100">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-person text-primary me-2"></i>Your Details</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                        {{ form.patient_name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                        {{ form.patient_phone }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        {{ form.patient_email }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Symptoms</label>
+                        {{ form.notes }}
+                    </div>
+                    <div id="selected-slot-summary" class="alert alert-primary d-none">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Selected Slot:</strong> <span id="slot-summary-text"></span>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 mt-2" id="confirm-btn" disabled>
+                        <i class="bi bi-calendar-check me-2"></i>Confirm Appointment
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const step1 = document.getElementById('step-1');
+    const step2 = document.getElementById('step-2');
+    const step3 = document.getElementById('step-3');
+
+    const step2Circle = document.getElementById('step2-circle');
+    const step3Circle = document.getElementById('step3-circle');
+    const step2Label  = document.getElementById('step2-label');
+    const step3Label  = document.getElementById('step3-label');
+
+    let selectedDoctorId   = null;
+    let selectedSpeciality = null;
+
+    function activateStep(num) {
+        if (num >= 2) {
+            step2Circle.classList.replace('bg-light', 'bg-primary');
+            step2Circle.classList.replace('text-muted', 'text-white');
+            step2Label.classList.replace('text-muted', 'text-primary');
+            step2Label.classList.add('fw-semibold');
+        }
+        if (num >= 3) {
+            step3Circle.classList.replace('bg-light', 'bg-primary');
+            step3Circle.classList.replace('text-muted', 'text-white');
+            step3Label.classList.replace('text-muted', 'text-primary');
+            step3Label.classList.add('fw-semibold');
+        }
+    }
+
+    // ── Step 1 → Step 2 ──
+    document.querySelectorAll('.speciality-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.speciality-card').forEach(c =>
+                c.classList.remove('border-primary', 'bg-primary', 'text-white'));
+            card.classList.add('border-primary', 'bg-primary', 'text-white');
+            selectedSpeciality = card.dataset.speciality;
+            step1.classList.add('d-none');
+            step2.classList.remove('d-none');
+            activateStep(2);
+            loadDoctors(selectedSpeciality);
+        });
+    });
+
+    function loadDoctors(speciality) {
+        const list    = document.getElementById('doctor-list');
+        const loading = document.getElementById('doctor-loading');
+        list.innerHTML = '';
+        loading.classList.remove('d-none');
+        fetch(`/ajax/doctors/?speciality=${encodeURIComponent(speciality)}`)
+            .then(r => r.json())
+            .then(data => {
+                loading.classList.add('d-none');
+                if (!data.doctors.length) {
+                    list.innerHTML = '<div class="col-12"><div class="alert alert-warning">No available doctors for this speciality right now.</div></div>';
+                    return;
+                }
+                data.doctors.forEach(doc => {
+                    const statusDot  = doc.availability === 'available' ? '🟢' : '🔴';
+                    let slotBadge = '';
+                    let disabled = '';
+                    if (!doc.has_slots) {
+                        slotBadge = `<span class="badge bg-secondary bg-opacity-10 text-secondary">No slots scheduled</span>`;
+                        disabled = 'opacity-50 pe-none';
+                    } else if (doc.open_slots > 0) {
+                        slotBadge = `<span class="badge bg-success bg-opacity-10 text-success">${doc.open_slots} slot${doc.open_slots > 1 ? 's' : ''} open</span>`;
+                    } else {
+                        slotBadge = `<span class="badge bg-danger bg-opacity-10 text-danger">Fully booked</span>`;
+                        disabled = 'opacity-50 pe-none';
+                    }
+                    list.innerHTML += `
+                        <div class="col-md-6">
+                            <div class="card border doctor-card h-100 p-3 ${disabled}"
+                                 style="cursor:${(doc.has_slots && doc.open_slots > 0) ? 'pointer' : 'not-allowed'};transition:all .2s"
+                                 data-id="${doc.id}" data-name="${doc.name}"
+                                 ${(!doc.has_slots || doc.open_slots === 0) ? 'data-full="true"' : ''}>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style="width:48px;height:48px;flex-shrink:0">
+                                        <i class="bi bi-person-fill text-primary fs-5"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0 fw-semibold">${statusDot} Dr. ${doc.name}</p>
+                                        <small class="text-muted">${doc.department}</small>
+                                    </div>
+                                    <div>${slotBadge}</div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                attachDoctorEvents();
+            });
+    }
+
+    function attachDoctorEvents() {
+        document.querySelectorAll('.doctor-card').forEach(card => {
+            if (card.dataset.full === 'true') return; // skip fully booked
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.doctor-card').forEach(c => c.classList.remove('border-primary'));
+                card.classList.add('border-primary');
+                selectedDoctorId = card.dataset.id;
+                document.getElementById('selected-doctor-id').value = selectedDoctorId;
+                step2.classList.add('d-none');
+                step3.classList.remove('d-none');
+                activateStep(3);
+                loadSlots(selectedDoctorId);
+            });
+        });
+    }
+
+    function loadSlots(doctorId) {
+        const list    = document.getElementById('slot-list');
+        const loading = document.getElementById('slot-loading');
+        const noMsg   = document.getElementById('no-slots-msg');
+        list.innerHTML = '';
+        noMsg.classList.add('d-none');
+        loading.classList.remove('d-none');
+        fetch(`/ajax/slots/?doctor_id=${doctorId}`)
+            .then(r => r.json())
+            .then(data => {
+                loading.classList.add('d-none');
+                if (!data.slots.length) {
+                    noMsg.classList.remove('d-none');
+                    return;
+                }
+                data.slots.forEach(slot => {
+                    const isFull    = slot.is_full;
+                    const leftLabel = isFull
+                        ? '<span class="badge bg-danger">Full</span>'
+                        : `<span class="badge bg-success">${slot.slots_left} left</span>`;
+                    const btn = document.createElement('div');
+                    btn.className = `slot-btn d-flex align-items-center justify-content-between border rounded p-3 ${isFull ? 'opacity-50' : ''}`;
+                    btn.style.cursor     = isFull ? 'not-allowed' : 'pointer';
+                    btn.style.transition = 'all .2s';
+                    btn.dataset.id       = slot.id;
+                    btn.dataset.full     = isFull;
+                    btn.innerHTML = `
+                        <div>
+                            <p class="mb-0 fw-semibold">${slot.start_time} &ndash; ${slot.end_time}</p>
+                            <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>${slot.date}</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <small class="text-muted">${slot.booked}/${slot.max} booked</small>
+                            ${leftLabel}
+                        </div>`;
+                    if (!isFull) {
+                        btn.addEventListener('click', () => selectSlot(btn, slot));
+                    }
+                    list.appendChild(btn);
+                });
+            });
+    }
+
+    function selectSlot(btn, slot) {
+        document.querySelectorAll('.slot-btn').forEach(b => {
+            b.classList.remove('border-primary', 'bg-primary', 'text-white');
+            b.querySelector('.badge').className = 'badge bg-success';
+        });
+        btn.classList.add('border-primary', 'bg-primary', 'text-white');
+        btn.querySelector('.badge').className = 'badge bg-light text-primary';
+        document.getElementById('selected-slot-id').value = slot.id;
+        document.getElementById('slot-summary-text').textContent = `${slot.date}  ${slot.start_time} – ${slot.end_time}`;
+        document.getElementById('selected-slot-summary').classList.remove('d-none');
+        document.getElementById('confirm-btn').removeAttribute('disabled');
+    }
+
+    // Back buttons
+    document.getElementById('back-to-step1').addEventListener('click', () => {
+        step2.classList.add('d-none');
+        step1.classList.remove('d-none');
+    });
+    document.getElementById('back-to-step2').addEventListener('click', () => {
+        step3.classList.add('d-none');
+        step2.classList.remove('d-none');
+    });
+
+    // ── Real-Time Sync via SSE ──
+    const evtSource = new EventSource('/sse/doctor-updates/');
+    evtSource.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // 1. Refresh speciality cards on step 1 if not yet selected
+        if (!step1.classList.contains('d-none')) {
+            const grid = step1.querySelector('.row');
+            const ICONS = {
+                'Cardiologist': '❤️', 'Neurologist': '🧠', 'Cancer Specialist': '🎗️',
+                'Orthopedic Surgeon': '🦴', 'Dermatologist': '🧴', 'Pediatrician': '👶',
+                'Psychiatrist': '🧘', 'Endocrinologist': '⚗️', 'Gastroenterologist': '�ac1',
+                'Pulmonologist': '�ac0', 'Nephrologist': '💧', 'Ophthalmologist': '👁️',
+                'ENT Specialist': '👂', 'General Physician': '🩺'
+            };
+            grid.innerHTML = data.specialities.length
+                ? data.specialities.map(s => `
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="card border speciality-card h-100 text-center p-3"
+                             style="cursor:pointer;transition:all .2s" data-speciality="${s}">
+                            <div class="mb-2 fs-2">${ICONS[s] || '🏥'}</div>
+                            <p class="mb-0 fw-semibold small">${s}</p>
+                        </div>
+                    </div>`).join('')
+                : '<div class="col-12"><div class="alert alert-warning">No available doctors at the moment.</div></div>';
+
+            // re-attach click events to new cards
+            document.querySelectorAll('.speciality-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.speciality-card').forEach(c =>
+                        c.classList.remove('border-primary', 'bg-primary', 'text-white'));
+                    card.classList.add('border-primary', 'bg-primary', 'text-white');
+                    selectedSpeciality = card.dataset.speciality;
+                    step1.classList.add('d-none');
+                    step2.classList.remove('d-none');
+                    activateStep(2);
+                    loadDoctors(selectedSpeciality);
+                });
+            });
+        }
+
+        // 2. If patient is on step 2 (doctor list), refresh it live
+        if (!step2.classList.contains('d-none') && selectedSpeciality) {
+            loadDoctors(selectedSpeciality);
+        }
+
+        // 3. If patient is on step 3 (slot selection), check if selected doctor went absent or fully booked
+        if (!step3.classList.contains('d-none') && selectedDoctorId) {
+            const doctor = data.doctors.find(d => String(d.id) === String(selectedDoctorId));
+            if (doctor && doctor.availability !== 'available') {
+                document.getElementById('confirm-btn').setAttribute('disabled', true);
+                document.getElementById('selected-slot-summary').classList.add('d-none');
+                document.getElementById('selected-slot-id').value = '';
+                document.getElementById('slot-list').innerHTML = `
+                    <div class="alert alert-danger d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <div><strong>Dr. ${doctor.name} is no longer available.</strong><br>
+                        <small>Please go back and choose another doctor.</small></div>
+                    </div>`;
+                document.getElementById('no-slots-msg').classList.add('d-none');
+            } else if (doctor && doctor.availability === 'available') {
+                // silently refresh slots to reflect latest booking counts
+                loadSlots(selectedDoctorId);
+            }
+        }
+    };
+
+    evtSource.onerror = function() {
+        // SSE disconnected — silently ignore, server will reconnect
+        evtSource.close();
+    };
+</script>
+{% endblock %}

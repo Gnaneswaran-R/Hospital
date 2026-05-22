@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Register New Patient{% endblock %}
+
+{% block content %}
+<a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm mb-4">&#8592; Back</a>
+<div class="row gx-4 gy-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="mb-4">
+                <h1 class="h3">New Patient Registration</h1>
+                <p class="text-muted">Complete the form below to submit a new patient request.</p>
+            </div>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="row gx-3 gy-3">
+                    <div class="col-md-6">{{ form.name.label_tag }}{{ form.name }}</div>
+                    <div class="col-md-3">{{ form.age.label_tag }}{{ form.age }}</div>
+                    <div class="col-md-3">{{ form.gender.label_tag }}{{ form.gender }}</div>
+                    <div class="col-md-6">{{ form.phone.label_tag }}{{ form.phone }}</div>
+                    <div class="col-md-6">{{ form.email.label_tag }}{{ form.email }}</div>
+                    <div class="col-md-12">{{ form.address.label_tag }}{{ form.address }}</div>
+                    <div class="col-md-6">{{ form.disease.label_tag }}{{ form.disease }}</div>
+                    <div class="col-md-6">{{ form.preferred_date.label_tag }}{{ form.preferred_date }}</div>
+                    <div class="col-md-12">{{ form.notes.label_tag }}{{ form.notes }}</div>
+                </div>
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary btn-lg">Submit Patient Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <h2 class="h5 mb-3">Patient request guidance</h2>
+            <p class="text-muted">Once submitted, hospital staff will review your details, and you will be notified via email once your request is accepted or rejected.</p>
+            <ul class="list-unstyled text-muted">
+                <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>No account required</li>
+                <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Your details are stored securely</li>
+                <li class="mb-3"><i class="bi bi-check-circle-fill text-success me-2"></i>Email notification on decision</li>
+            </ul>
+        </div>
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="h5 mb-0"><i class="bi bi-person-check-fill text-success me-2"></i>Available Doctors</h2>
+                <span class="badge bg-success" id="live-dot">● Live</span>
+            </div>
+            <div id="live-doctors-list">
+                <div class="text-center text-muted py-3">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2 small">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function renderDoctors(doctors) {
+        const list = document.getElementById('live-doctors-list');
+        const available = doctors.filter(d => d.availability === 'available');
+        if (!available.length) {
+            list.innerHTML = '<p class="text-muted small mb-0">No doctors available right now.</p>';
+            return;
+        }
+        list.innerHTML = available.map(d => `
+            <div class="d-flex align-items-center gap-2 py-2 border-bottom">
+                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px">
+                    <i class="bi bi-person-fill text-success"></i>
+                </div>
+                <div>
+                    <p class="mb-0 fw-semibold small">Dr. ${d.name}</p>
+                    <small class="text-muted">${d.speciality} &mdash; ${d.department}</small>
+                </div>
+            </div>`).join('');
+    }
+
+    const sse = new EventSource('/sse/doctor-updates/');
+    sse.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.doctors) renderDoctors(data.doctors);
+    };
+    sse.onerror = () => sse.close();
+</script>
+{% endblock %}

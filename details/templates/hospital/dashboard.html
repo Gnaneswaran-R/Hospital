@@ -1,0 +1,359 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Page Header ── -->
+<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1 fw-bold">Admin Dashboard</h1>
+        <p class="text-muted mb-0">
+            <span class="badge bg-success bg-opacity-10 text-success me-1">
+                <i class="bi bi-circle-fill me-1" style="font-size:7px"></i>Live
+            </span>
+            Real-time hospital overview — {{ today|date:"l, M d Y" }}
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-person-badge me-1"></i>Manage Doctors
+        </a>
+        <a href="{% url 'book_appointment' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i>New Appointment
+        </a>
+    </div>
+</div>
+
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #0d6efd !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-people-fill text-primary"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Total Patients</p>
+                    <h3 class="mb-0 fw-bold" id="stat-total">{{ total_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #198754 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Accepted</p>
+                    <h3 class="mb-0 fw-bold text-success" id="stat-accepted">{{ accepted_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #dc3545 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Rejected</p>
+                    <h3 class="mb-0 fw-bold text-danger" id="stat-rejected">{{ rejected_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #6c757d !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-hourglass-split text-secondary"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Pending</p>
+                    <h3 class="mb-0 fw-bold text-secondary" id="stat-pending">{{ pending_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Grid: Patients Table + Side Panels ── -->
+<div class="row g-4">
+
+    <!-- LEFT: Patients Table -->
+    <div class="col-lg-8">
+
+        <!-- Filters -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="🔍 Search by name">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                            <option value="pending"  {% if status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select name="disease" class="form-select form-select-sm">
+                            <option value="">All Diseases</option>
+                            <option value="Diabetes" {% if disease_filter == 'Diabetes' %}selected{% endif %}>Diabetes</option>
+                            <option value="Hypertension" {% if disease_filter == 'Hypertension' %}selected{% endif %}>Hypertension</option>
+                            <option value="Asthma" {% if disease_filter == 'Asthma' %}selected{% endif %}>Asthma</option>
+                            <option value="Heart Disease" {% if disease_filter == 'Heart Disease' %}selected{% endif %}>Heart Disease</option>
+                            <option value="Tuberculosis" {% if disease_filter == 'Tuberculosis' %}selected{% endif %}>Tuberculosis</option>
+                            <option value="Cancer" {% if disease_filter == 'Cancer' %}selected{% endif %}>Cancer</option>
+                            <option value="Lung Cancer" {% if disease_filter == 'Lung Cancer' %}selected{% endif %}>Lung Cancer</option>
+                            <option value="Breast Cancer" {% if disease_filter == 'Breast Cancer' %}selected{% endif %}>Breast Cancer</option>
+                            <option value="Kidney Disease" {% if disease_filter == 'Kidney Disease' %}selected{% endif %}>Kidney Disease</option>
+                            <option value="Liver Disease" {% if disease_filter == 'Liver Disease' %}selected{% endif %}>Liver Disease</option>
+                            <option value="Arthritis" {% if disease_filter == 'Arthritis' %}selected{% endif %}>Arthritis</option>
+                            <option value="Thyroid Disorder" {% if disease_filter == 'Thyroid Disorder' %}selected{% endif %}>Thyroid Disorder</option>
+                            <option value="Anemia" {% if disease_filter == 'Anemia' %}selected{% endif %}>Anemia</option>
+                            <option value="Dengue" {% if disease_filter == 'Dengue' %}selected{% endif %}>Dengue</option>
+                            <option value="Malaria" {% if disease_filter == 'Malaria' %}selected{% endif %}>Malaria</option>
+                            <option value="Typhoid" {% if disease_filter == 'Typhoid' %}selected{% endif %}>Typhoid</option>
+                            <option value="Pneumonia" {% if disease_filter == 'Pneumonia' %}selected{% endif %}>Pneumonia</option>
+                            <option value="Migraine" {% if disease_filter == 'Migraine' %}selected{% endif %}>Migraine</option>
+                            <option value="Epilepsy" {% if disease_filter == 'Epilepsy' %}selected{% endif %}>Epilepsy</option>
+                            <option value="Depression" {% if disease_filter == 'Depression' %}selected{% endif %}>Depression</option>
+                            <option value="Other" {% if disease_filter == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2 text-primary"></i>Patient Registrations</h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary">{{ total_patients }} total</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Disease</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'patient_detail' patient.pk %}" class="text-decoration-none fw-semibold">{{ patient.name }}</a>
+                                <div class="text-muted" style="font-size:11px">{{ patient.email|default:"—" }}</div>
+                            </td>
+                            <td>{{ patient.disease }}</td>
+                            <td>{{ patient.phone }}</td>
+                            <td>
+                                <span class="badge rounded-pill
+                                    {% if patient.status == 'accepted' %}bg-success
+                                    {% elif patient.status == 'rejected' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ patient.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ patient.preferred_date|date:'M d, Y'|default:"—" }}</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-xs btn-outline-secondary" style="padding:2px 7px;font-size:11px" title="View"><i class="bi bi-eye"></i></a>
+                                    <form method="post" action="{% url 'accept_patient' patient.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-xs btn-success" style="padding:2px 7px;font-size:11px" {% if patient.status == 'accepted' %}disabled{% endif %} title="Accept"><i class="bi bi-check2"></i></button>
+                                    </form>
+                                    <form method="post" action="{% url 'reject_patient' patient.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-xs btn-danger" style="padding:2px 7px;font-size:11px" {% if patient.status == 'rejected' %}disabled{% endif %} title="Reject"><i class="bi bi-x"></i></button>
+                                    </form>
+                                    <a href="{% url 'edit_patient' patient.pk %}" class="btn btn-xs btn-outline-primary" style="padding:2px 7px;font-size:11px" title="Edit"><i class="bi bi-pencil"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>No records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+                <small class="text-muted">Showing {{ patients|length }} of {{ total_patients }}</small>
+                {% if page_obj.has_other_pages %}
+                <nav><ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.previous_page_number }}">‹</a></li>
+                    {% endif %}
+                    {% for n in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == n %}active{% endif %}">
+                            <a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ n }}">{{ n }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.next_page_number }}">›</a></li>
+                    {% endif %}
+                </ul></nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Side Panels -->
+    <div class="col-lg-4 d-flex flex-column gap-4">
+
+        <!-- Doctor Live Status -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-person-badge-fill me-2 text-primary"></i>Doctor Status</h6>
+                <span class="badge bg-success bg-opacity-10 text-success" style="font-size:10px">
+                    <i class="bi bi-circle-fill me-1" style="font-size:6px"></i>Live
+                </span>
+            </div>
+            <div class="card-body p-0">
+                <!-- Doctor stat mini row -->
+                <div class="d-flex border-bottom">
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold" id="dash-total-doctors">{{ total_doctors }}</div>
+                        <div class="text-muted" style="font-size:10px">Total</div>
+                    </div>
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold text-success" id="dash-available-doctors">{{ available_doctors }}</div>
+                        <div class="text-muted" style="font-size:10px">Available</div>
+                    </div>
+                    <div class="flex-fill text-center py-2">
+                        <div class="fw-bold text-warning" id="dash-onleave-doctors">{{ on_leave_doctors }}</div>
+                        <div class="text-muted" style="font-size:10px">On Leave</div>
+                    </div>
+                </div>
+                <!-- Doctor list -->
+                <div id="live-doctor-list" style="max-height:280px;overflow-y:auto;">
+                    {% for doctor in all_doctors %}
+                    <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom doctor-row" data-doctor-id="{{ doctor.pk }}">
+                        <div class="flex-shrink-0">
+                            {% if doctor.availability == 'available' %}
+                                <span class="text-success fs-6">🟢</span>
+                            {% elif doctor.availability == 'on_leave' %}
+                                <span class="text-warning fs-6">🟡</span>
+                            {% else %}
+                                <span class="text-danger fs-6">🔴</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <p class="mb-0 fw-semibold small text-truncate">Dr. {{ doctor.name }}</p>
+                            <p class="mb-0 text-muted" style="font-size:11px">{{ doctor.speciality }} · {{ doctor.department }}</p>
+                        </div>
+                        <a href="{% url 'doctor_availability' doctor.pk %}" class="btn btn-xs btn-outline-secondary flex-shrink-0" style="padding:2px 6px;font-size:10px">Manage</a>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-4 small">No doctors added yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 py-2">
+                <a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="bi bi-arrow-right me-1"></i>View All Doctors
+                </a>
+            </div>
+        </div>
+
+        <!-- Today's Appointments -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-calendar-check-fill me-2 text-primary"></i>Today's Appointments</h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary">{{ todays_appointments|length }}</span>
+            </div>
+            <div style="max-height:300px;overflow-y:auto;">
+                {% for appt in todays_appointments %}
+                <div class="px-3 py-2 border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="mb-0 fw-semibold small">{{ appt.patient_name }}</p>
+                            <p class="mb-0 text-muted" style="font-size:11px">
+                                Dr. {{ appt.doctor.name }} ·
+                                {{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}
+                            </p>
+                        </div>
+                        <span class="badge rounded-pill
+                            {% if appt.status == 'confirmed' %}bg-success
+                            {% elif appt.status == 'cancelled' %}bg-danger
+                            {% else %}bg-secondary{% endif %}" style="font-size:10px">
+                            {{ appt.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4 small">
+                    <i class="bi bi-calendar-x d-block fs-4 mb-1"></i>No appointments today.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function availDot(av) {
+        if (av === 'available')   return '🟢';
+        if (av === 'on_leave')    return '🟡';
+        return '🔴';
+    }
+
+    const sse = new EventSource('/sse/doctor-updates/');
+    sse.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // ── Patient stat cards ──
+        if (data.stats) {
+            document.getElementById('stat-total').textContent    = data.stats.total_patients;
+            document.getElementById('stat-accepted').textContent = data.stats.accepted_patients;
+            document.getElementById('stat-rejected').textContent = data.stats.rejected_patients;
+            document.getElementById('stat-pending').textContent  = data.stats.pending_patients;
+
+            // Doctor mini stats in side panel
+            document.getElementById('dash-total-doctors').textContent    = data.stats.total_doctors;
+            document.getElementById('dash-available-doctors').textContent = data.stats.available_doctors;
+            document.getElementById('dash-onleave-doctors').textContent  = data.stats.on_leave_doctors;
+        }
+
+        // ── Doctor live status dots in side panel ──
+        if (data.doctors) {
+            data.doctors.forEach(doc => {
+                const row = document.querySelector(`.doctor-row[data-doctor-id="${doc.id}"]`);
+                if (!row) return;
+                const dot = row.querySelector('.flex-shrink-0 span');
+                if (dot) dot.textContent = availDot(doc.availability);
+                const nameEl = row.querySelector('.fw-semibold');
+                if (nameEl) nameEl.textContent = `Dr. ${doc.name}`;
+                const subEl = row.querySelector('.text-muted');
+                if (subEl) subEl.textContent = `${doc.speciality} · ${doc.department}`;
+            });
+        }
+    };
+    sse.onerror = () => sse.close();
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Patient Account{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 p-4">
+            <h1 class="h4 mb-3">Create an account</h1>
+            <p class="text-muted mb-4">Register securely and then submit patient details from your dashboard.</p>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">{{ form.username.label_tag }}{{ form.username }}</div>
+                <div class="mb-3">{{ form.email.label_tag }}{{ form.email }}</div>
+                <div class="mb-3">{{ form.password1.label_tag }}{{ form.password1 }}</div>
+                <div class="mb-3">{{ form.password2.label_tag }}{{ form.password2 }}</div>
+                <button type="submit" class="btn btn-primary w-100">Create Account</button>
+            </form>
+            <p class="text-center text-muted mt-4">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

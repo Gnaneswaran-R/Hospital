@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Doctor{% endblock %}
+
+{% block content %}
+<a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-secondary btn-sm mb-4">&#8592; Back</a>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 p-4">
+            <h1 class="h4 mb-1">Edit Doctor</h1>
+            <p class="text-muted mb-4">Update details for Dr. {{ doctor.name }}</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Doctor Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Department</label>
+                        {{ form.department }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Speciality</label>
+                        {{ form.speciality }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Availability</label>
+                        {{ form.availability }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Start Time</label>
+                        {{ form.appointment_start }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">End Time</label>
+                        {{ form.appointment_end }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Slots / Day</label>
+                        {{ form.consultation_slots }}
+                    </div>
+                </div>
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
