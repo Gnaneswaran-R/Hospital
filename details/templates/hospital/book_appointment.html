@@ -78,10 +78,7 @@
                             {% if form.disease.errors %}<div class="text-danger small mt-1">{{ form.disease.errors.0 }}</div>{% endif %}
                             <div class="form-text text-success fw-semibold" id="speciality-hint"></div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Preferred Date</label>
-                            <input type="date" name="preferred_date" id="id_preferred_date" class="form-control" value="{{ request.POST.preferred_date }}">
-                        </div>
+
                         <div class="col-md-12">
                             <label class="form-label">Notes / Symptoms</label>
                             {{ form.notes }}
@@ -185,10 +182,7 @@
                             <p class="text-muted mb-0">Age / Gender</p>
                             <p class="fw-semibold mb-0" id="ro-age-gender">—</p>
                         </div>
-                        <div class="col-6">
-                            <p class="text-muted mb-0">Preferred Date</p>
-                            <p class="fw-semibold mb-0" id="ro-date">—</p>
-                        </div>
+
                         <div class="col-12" id="ro-notes-row">
                             <p class="text-muted mb-0">Notes</p>
                             <p class="fw-semibold mb-0" id="ro-notes">—</p>
@@ -409,7 +403,6 @@ function attachDoctorEvents() {
             const age     = document.getElementById('id_patient_age').value;
             const genderEl = document.getElementById('id_patient_gender');
             const gender  = genderEl.options[genderEl.selectedIndex]?.text || '';
-            const date    = document.getElementById('id_preferred_date').value;
             const notes   = document.getElementById('id_notes').value;
 
             document.getElementById('ro-name').textContent       = name    || '—';
@@ -417,7 +410,6 @@ function attachDoctorEvents() {
             document.getElementById('ro-email').textContent      = email   || '—';
             document.getElementById('ro-disease').textContent    = disease || '—';
             document.getElementById('ro-age-gender').textContent = [age, gender].filter(Boolean).join(' / ') || '—';
-            document.getElementById('ro-date').textContent       = date    || '—';
             document.getElementById('ro-notes').textContent      = notes   || '—';
 
             step2.classList.add('d-none');
