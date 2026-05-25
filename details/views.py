@@ -176,6 +176,19 @@ def dashboard(request):
         slot__date=today
     ).select_related('doctor', 'slot').order_by('slot__start_time')
 
+    # ── Appointment booking requests (from /book/ flow) ──
+    appt_status_filter = request.GET.get('appt_status', 'pending')
+    all_appointments = Appointment.objects.select_related('doctor', 'slot').order_by('-booked_at')
+    if appt_status_filter in [Appointment.STATUS_PENDING, Appointment.STATUS_ACCEPTED, Appointment.STATUS_REJECTED, Appointment.STATUS_CANCELLED]:
+        all_appointments = all_appointments.filter(status=appt_status_filter)
+
+    appt_pending  = Appointment.objects.filter(status=Appointment.STATUS_PENDING).count()
+    appt_accepted = Appointment.objects.filter(status=Appointment.STATUS_ACCEPTED).count()
+    appt_rejected = Appointment.objects.filter(status=Appointment.STATUS_REJECTED).count()
+
+    appt_paginator = Paginator(all_appointments, 8)
+    appt_page_obj = appt_paginator.get_page(request.GET.get('appt_page'))
+
     return render(request, 'hospital/dashboard.html', {
         'patients': page_obj,
         'query': query,
@@ -193,6 +206,13 @@ def dashboard(request):
         'on_leave_doctors': on_leave_doctors,
         'todays_appointments': todays_appointments,
         'today': today,
+        # appointment booking data
+        'all_appointments': appt_page_obj,
+        'appt_page_obj': appt_page_obj,
+        'appt_status_filter': appt_status_filter,
+        'appt_pending': appt_pending,
+        'appt_accepted': appt_accepted,
+        'appt_rejected': appt_rejected,
     })
 
 
@@ -263,6 +283,28 @@ def reject_appointment(request, pk):
         _send_appointment_email(appointment, accepted=False)
         messages.success(request, f'{appointment.patient_name}\'s appointment rejected and notified by email.')
     return redirect('doctor_appointments', pk=appointment.doctor.pk)
+
+
+@user_passes_test(_is_admin, login_url='login')
+def accept_appointment(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk)
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_ACCEPTED
+        appointment.save()
+        _send_appointment_email(appointment, accepted=True)
+        messages.success(request, f'{appointment.patient_name}\'s appointment accepted and notified by email.')
+    return redirect('dashboard')
+
+
+@user_passes_test(_is_admin, login_url='login')
+def reject_appointment(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk)
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_REJECTED
+        appointment.save()
+        _send_appointment_email(appointment, accepted=False)
+        messages.success(request, f'{appointment.patient_name}\'s appointment rejected and notified by email.')
+    return redirect('dashboard')
 
 
 @user_passes_test(_is_admin, login_url='login')
@@ -373,6 +415,21 @@ def doctor_portal(request):
     paginator = Paginator(patients.order_by('-created_at'), 10)
     page_obj = paginator.get_page(request.GET.get('page'))
 
+    # ── Appointment requests for this doctor ──
+    appt_status_filter = request.GET.get('appt_status', 'pending')
+    appointments_qs = Appointment.objects.filter(doctor=doctor).select_related('slot')
+    if appt_status_filter in [Appointment.STATUS_PENDING, Appointment.STATUS_ACCEPTED, Appointment.STATUS_REJECTED]:
+        appointments_qs = appointments_qs.filter(status=appt_status_filter)
+    elif appt_status_filter == 'all':
+        pass  # no filter
+
+    appt_pending  = Appointment.objects.filter(doctor=doctor, status=Appointment.STATUS_PENDING).count()
+    appt_accepted = Appointment.objects.filter(doctor=doctor, status=Appointment.STATUS_ACCEPTED).count()
+    appt_rejected = Appointment.objects.filter(doctor=doctor, status=Appointment.STATUS_REJECTED).count()
+
+    appt_paginator = Paginator(appointments_qs.order_by('-booked_at'), 10)
+    appt_page_obj = appt_paginator.get_page(request.GET.get('appt_page'))
+
     return render(request, 'hospital/doctor_portal.html', {
         'doctor': doctor,
         'patients': page_obj,
@@ -383,6 +440,13 @@ def doctor_portal(request):
         'pending': pending,
         'accepted': accepted,
         'rejected': rejected,
+        # appointment data
+        'appointments': appt_page_obj,
+        'appt_page_obj': appt_page_obj,
+        'appt_status_filter': appt_status_filter,
+        'appt_pending': appt_pending,
+        'appt_accepted': appt_accepted,
+        'appt_rejected': appt_rejected,
     })
 
 
@@ -409,6 +473,32 @@ def doctor_reject_patient(request, pk):
         patient.save()
         _send_patient_email(patient, accepted=False)
         messages.success(request, f'{patient.name} has been rejected and notified by email.')
+    return redirect('doctor_portal')
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_accept_appointment(request, pk):
+    """Doctor accepts a pending appointment booking → email sent to patient."""
+    doctor = request.user.doctor_profile.doctor
+    appointment = get_object_or_404(Appointment, pk=pk, doctor=doctor)
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_ACCEPTED
+        appointment.save()
+        _send_appointment_email(appointment, accepted=True)
+        messages.success(request, f'{appointment.patient_name}\'s appointment has been accepted and they have been notified by email.')
+    return redirect('doctor_portal')
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_reject_appointment(request, pk):
+    """Doctor rejects a pending appointment booking → email sent to patient."""
+    doctor = request.user.doctor_profile.doctor
+    appointment = get_object_or_404(Appointment, pk=pk, doctor=doctor)
+    if request.method == 'POST':
+        appointment.status = Appointment.STATUS_REJECTED
+        appointment.save()
+        _send_appointment_email(appointment, accepted=False)
+        messages.success(request, f'{appointment.patient_name}\'s appointment has been rejected and they have been notified by email.')
     return redirect('doctor_portal')
 
 
@@ -804,8 +894,10 @@ def book_appointment(request):
             appointment = form.save(commit=False)
             appointment.doctor = doctor
             appointment.slot   = slot
+            appointment.status = Appointment.STATUS_PENDING  # always starts pending
             appointment.save()
-            return redirect('appointment_confirmation', pk=appointment.pk)
+            # No email yet — doctor must approve first
+            return redirect('appointment_pending', pk=appointment.pk)
         else:
             messages.error(request, 'Please fill in all required fields.')
             return render(request, 'hospital/book_appointment.html', {'form': form})
@@ -817,7 +909,16 @@ def book_appointment(request):
 
 
 def appointment_confirmation(request, pk):
+    """Shown after doctor accepts an appointment (admin-side accept)."""
     appointment = get_object_or_404(Appointment, pk=pk)
     return render(request, 'hospital/appointment_confirmation.html', {
+        'appointment': appointment
+    })
+
+
+def appointment_pending(request, pk):
+    """Shown right after patient submits a booking — awaiting doctor approval."""
+    appointment = get_object_or_404(Appointment, pk=pk)
+    return render(request, 'hospital/appointment_pending.html', {
         'appointment': appointment
     })

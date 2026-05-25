@@ -291,39 +291,230 @@
             </div>
         </div>
 
-        <!-- Today's Appointments -->
+        <!-- Appointment Requests Summary -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-calendar-check-fill me-2 text-primary"></i>Today's Appointments</h6>
-                <span class="badge bg-primary bg-opacity-10 text-primary">{{ todays_appointments|length }}</span>
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-calendar-check-fill me-2 text-warning"></i>Appointment Requests</h6>
+                {% if appt_pending > 0 %}
+                <span class="badge bg-warning text-dark">{{ appt_pending }} pending</span>
+                {% else %}
+                <span class="badge bg-success bg-opacity-10 text-success">All clear</span>
+                {% endif %}
             </div>
-            <div style="max-height:300px;overflow-y:auto;">
-                {% for appt in todays_appointments %}
-                <div class="px-3 py-2 border-bottom">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="mb-0 fw-semibold small">{{ appt.patient_name }}</p>
-                            <p class="mb-0 text-muted" style="font-size:11px">
-                                Dr. {{ appt.doctor.name }} ·
-                                {{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}
-                            </p>
-                        </div>
-                        <span class="badge rounded-pill
-                            {% if appt.status == 'confirmed' %}bg-success
-                            {% elif appt.status == 'cancelled' %}bg-danger
-                            {% else %}bg-secondary{% endif %}" style="font-size:10px">
-                            {{ appt.get_status_display }}
-                        </span>
+            <div class="card-body p-0">
+                <div class="d-flex border-bottom">
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold text-warning">{{ appt_pending }}</div>
+                        <div class="text-muted" style="font-size:10px">Pending</div>
+                    </div>
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold text-success">{{ appt_accepted }}</div>
+                        <div class="text-muted" style="font-size:10px">Accepted</div>
+                    </div>
+                    <div class="flex-fill text-center py-2">
+                        <div class="fw-bold text-danger">{{ appt_rejected }}</div>
+                        <div class="text-muted" style="font-size:10px">Rejected</div>
                     </div>
                 </div>
-                {% empty %}
-                <div class="text-center text-muted py-4 small">
-                    <i class="bi bi-calendar-x d-block fs-4 mb-1"></i>No appointments today.
+                {% if appt_pending > 0 %}
+                <div class="px-3 py-2 text-center">
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-hourglass-split me-1 text-warning"></i>
+                        {{ appt_pending }} booking request{{ appt_pending|pluralize }} awaiting your approval.
+                    </p>
+                    <a href="#appointment-requests-section" class="btn btn-warning btn-sm text-dark w-100">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Review Requests
+                    </a>
                 </div>
-                {% endfor %}
+                {% else %}
+                <div class="text-center text-muted py-3 small">
+                    <i class="bi bi-check-circle-fill text-success d-block fs-4 mb-1"></i>No pending appointment requests.
+                </div>
+                {% endif %}
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ -->
+<!--  SECTION 2: Appointment Booking Requests (/book/ flow) -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="mt-4" id="appointment-requests-section">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-calendar2-check text-warning me-2"></i>Appointment Booking Requests
+            {% if appt_pending > 0 %}
+                <span class="badge bg-warning text-dark ms-2">{{ appt_pending }} pending</span>
+            {% endif %}
+        </h5>
+    </div>
+
+    <!-- Appointment Stat Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #ffc107 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Pending Approval</p>
+                <h3 class="mb-0 fw-bold text-warning">{{ appt_pending }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #198754 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Accepted</p>
+                <h3 class="mb-0 fw-bold text-success">{{ appt_accepted }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #dc3545 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Rejected</p>
+                <h3 class="mb-0 fw-bold text-danger">{{ appt_rejected }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Status Filter -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                {# preserve existing patient filters #}
+                {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+                {% if status_filter and status_filter != 'all' %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                {% if disease_filter %}<input type="hidden" name="disease" value="{{ disease_filter }}">{% endif %}
+                <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">Filter appointment requests:</label>
+                </div>
+                <div class="col-6 col-md-3">
+                    <select name="appt_status" class="form-select form-select-sm">
+                        <option value="pending"  {% if appt_status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+                        <option value="accepted" {% if appt_status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                        <option value="rejected" {% if appt_status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="all"      {% if appt_status_filter == 'all'      %}selected{% endif %}>All</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-warning btn-sm text-dark">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-calendar-event me-2 text-warning"></i>Slot Booking Requests
+            </h6>
+            <span class="badge bg-warning bg-opacity-15 text-warning border border-warning">
+                {{ appt_pending }} awaiting doctor approval
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient Name</th>
+                        <th>Disease</th>
+                        <th>Phone</th>
+                        <th>Doctor</th>
+                        <th>Slot Date</th>
+                        <th>Time</th>
+                        <th>Booked At</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in all_appointments %}
+                    <tr>
+                        <td>
+                            <p class="mb-0 fw-semibold">{{ appt.patient_name }}</p>
+                            <div class="text-muted" style="font-size:11px">{{ appt.patient_email|default:"—" }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary bg-opacity-10 text-primary">{{ appt.disease|default:"—" }}</span>
+                        </td>
+                        <td>{{ appt.patient_phone }}</td>
+                        <td>
+                            <p class="mb-0 small">Dr. {{ appt.doctor.name }}</p>
+                            <div class="text-muted" style="font-size:11px">{{ appt.doctor.speciality }}</div>
+                        </td>
+                        <td>{{ appt.slot.date|date:"M d, Y" }}</td>
+                        <td class="text-muted" style="white-space:nowrap;">
+                            {{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}
+                        </td>
+                        <td class="text-muted" style="font-size:11px">{{ appt.booked_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            <span class="badge rounded-pill
+                                {% if appt.status == 'accepted' %}bg-success
+                                {% elif appt.status == 'rejected' %}bg-danger
+                                {% elif appt.status == 'cancelled' %}bg-secondary
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ appt.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                {% if appt.status == 'pending' %}
+                                <form method="post" action="{% url 'accept_appointment' appt.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-xs btn-success"
+                                            style="padding:2px 8px;font-size:11px"
+                                            onclick="return confirm('Accept appointment for {{ appt.patient_name }}? An email will be sent.')">
+                                        <i class="bi bi-check2"></i> Accept
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'reject_appointment' appt.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-xs btn-danger"
+                                            style="padding:2px 8px;font-size:11px"
+                                            onclick="return confirm('Reject appointment for {{ appt.patient_name }}? An email will be sent.')">
+                                        <i class="bi bi-x"></i> Reject
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted" style="font-size:11px">—</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No appointment requests
+                            {% if appt_status_filter != 'all' %}with status "{{ appt_status_filter }}"{% endif %}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+            <small class="text-muted">Showing {{ all_appointments|length }} appointment request(s)</small>
+            {% if appt_page_obj.has_other_pages %}
+            <nav><ul class="pagination pagination-sm mb-0">
+                {% if appt_page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.previous_page_number }}">‹</a>
+                    </li>
+                {% endif %}
+                {% for n in appt_page_obj.paginator.page_range %}
+                    <li class="page-item {% if appt_page_obj.number == n %}active{% endif %}">
+                        <a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ n }}">{{ n }}</a>
+                    </li>
+                {% endfor %}
+                {% if appt_page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.next_page_number }}">›</a>
+                    </li>
+                {% endif %}
+            </ul></nav>
+            {% endif %}
+        </div>
     </div>
 </div>
 

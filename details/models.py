@@ -49,7 +49,8 @@ class DoctorSlot(models.Model):
         return f'Dr. {self.doctor.name} | {self.date} | {self.start_time} - {self.end_time}'
 
     def booked_count(self):
-        return self.appointments.exclude(status=Appointment.STATUS_CANCELLED).count()
+        # Only ACCEPTED appointments consume a slot; pending/rejected don't block it
+        return self.appointments.filter(status=Appointment.STATUS_ACCEPTED).count()
 
     def is_full(self):
         return self.booked_count() >= self.max_bookings
