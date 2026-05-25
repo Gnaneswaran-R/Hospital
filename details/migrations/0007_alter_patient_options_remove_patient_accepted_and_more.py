@@ -39,11 +39,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='patient',
-            name='preferred_doctor',
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name='patient',
             name='status',
             field=models.CharField(choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], default='pending', max_length=10),
         ),

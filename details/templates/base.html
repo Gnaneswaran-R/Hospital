@@ -29,6 +29,8 @@
                         {% if user.is_staff %}
                         <a class="btn btn-outline-primary btn-sm" href="{% url 'dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a>
                         <a class="btn btn-outline-primary btn-sm" href="{% url 'doctors_dashboard' %}"><i class="bi bi-person-badge me-1"></i>Doctors</a>
+                        {% elif user.doctor_profile %}
+                        <a class="btn btn-outline-primary btn-sm" href="{% url 'doctor_portal' %}"><i class="bi bi-clipboard2-pulse me-1"></i>My Patients</a>
                         {% endif %}
                         <a class="btn btn-secondary btn-sm" href="{% url 'logout' %}">Logout</a>
                     {% else %}

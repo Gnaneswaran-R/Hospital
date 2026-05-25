@@ -25,4 +25,10 @@ urlpatterns = [
     path('ajax/doctor-state/', views.ajax_doctor_state, name='ajax_doctor_state'),
     path('ajax/dashboard-stats/', views.ajax_dashboard_stats, name='ajax_dashboard_stats'),
     path('sse/doctor-updates/', views.sse_doctor_updates, name='sse_doctor_updates'),
+    # Doctor portal
+    path('portal/', views.doctor_portal, name='doctor_portal'),
+    path('portal/patients/<int:pk>/', views.doctor_patient_detail, name='doctor_patient_detail'),
+    path('portal/patients/<int:pk>/accept/', views.doctor_accept_patient, name='doctor_accept_patient'),
+    path('portal/patients/<int:pk>/reject/', views.doctor_reject_patient, name='doctor_reject_patient'),
+    path('portal/patients/<int:pk>/delete/', views.doctor_delete_patient, name='doctor_delete_patient'),
 ]

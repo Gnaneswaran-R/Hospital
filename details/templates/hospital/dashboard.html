@@ -146,6 +146,7 @@
                         <tr>
                             <th>Name</th>
                             <th>Disease</th>
+                            <th>Assigned Doctor</th>
                             <th>Phone</th>
                             <th>Status</th>
                             <th>Date</th>
@@ -160,6 +161,14 @@
                                 <div class="text-muted" style="font-size:11px">{{ patient.email|default:"—" }}</div>
                             </td>
                             <td>{{ patient.disease }}</td>
+                            <td>
+                                {% if patient.assigned_doctor %}
+                                    <span class="small">Dr. {{ patient.assigned_doctor.name }}</span>
+                                    <div class="text-muted" style="font-size:11px">{{ patient.assigned_doctor.speciality }}</div>
+                                {% else %}
+                                    <span class="text-muted small">Unassigned</span>
+                                {% endif %}
+                            </td>
                             <td>{{ patient.phone }}</td>
                             <td>
                                 <span class="badge rounded-pill
@@ -184,12 +193,17 @@
                                         <button type="submit" class="btn btn-xs btn-danger" style="padding:2px 7px;font-size:11px" {% if patient.status == 'rejected' %}disabled{% endif %} title="Reject"><i class="bi bi-x"></i></button>
                                     </form>
                                     <a href="{% url 'edit_patient' patient.pk %}" class="btn btn-xs btn-outline-primary" style="padding:2px 7px;font-size:11px" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" action="{% url 'delete_patient' patient.pk %}" class="d-inline" onsubmit="return confirm('Delete {{ patient.name }}? This cannot be undone.')">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" style="padding:2px 7px;font-size:11px" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
+                            <td colspan="7" class="text-center text-muted py-5">
                                 <i class="bi bi-inbox fs-2 d-block mb-2"></i>No records found.
                             </td>
                         </tr>

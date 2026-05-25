@@ -15,7 +15,67 @@ from django.utils import timezone
 import openpyxl
 
 from .forms import PatientForm, UserRegistrationForm, DoctorForm, DoctorExcelUploadForm, DoctorAvailabilityForm, DoctorSlotForm, AppointmentForm
-from .models import Patient, Doctor, DoctorSlot, Appointment
+from .models import Patient, Doctor, DoctorSlot, Appointment, DoctorProfile
+
+
+# ── Disease → Speciality mapping ──
+DISEASE_SPECIALITY_MAP = {
+    'Diabetes':          'Endocrinologist',
+    'Hypertension':      'Cardiologist',
+    'Asthma':            'Pulmonologist',
+    'Heart Disease':     'Cardiologist',
+    'Tuberculosis':      'Pulmonologist',
+    'Cancer':            'Cancer Specialist',
+    'Lung Cancer':       'Cancer Specialist',
+    'Breast Cancer':     'Cancer Specialist',
+    'Kidney Disease':    'Nephrologist',
+    'Liver Disease':     'Gastroenterologist',
+    'Arthritis':         'Orthopedic Surgeon',
+    'Thyroid Disorder':  'Endocrinologist',
+    'Anemia':            'General Physician',
+    'Dengue':            'General Physician',
+    'Malaria':           'General Physician',
+    'Typhoid':           'General Physician',
+    'Pneumonia':         'Pulmonologist',
+    'Migraine':          'Neurologist',
+    'Epilepsy':          'Neurologist',
+    'Depression':        'Psychiatrist',
+    'Skin Disease':      'Dermatologist',
+    'Eczema':            'Dermatologist',
+    'Psoriasis':         'Dermatologist',
+    'Acne':              'Dermatologist',
+    'Other':             'General Physician',
+}
+
+
+def _assign_doctor_for_disease(disease):
+    """Return the best available doctor for a given disease, or None."""
+    speciality = DISEASE_SPECIALITY_MAP.get(disease, 'General Physician')
+    doctor = Doctor.objects.filter(
+        speciality__iexact=speciality, availability='available'
+    ).first()
+    if not doctor:
+        # fallback: any available doctor
+        doctor = Doctor.objects.filter(availability='available').first()
+    return doctor
+
+
+def _get_doctor_patients(doctor):
+    """
+    Return all Patient records that belong to this doctor.
+    Includes both explicitly assigned patients AND unassigned patients
+    whose disease maps to this doctor's speciality.
+    """
+    from django.db.models import Q
+    # diseases that map to this doctor's speciality
+    matching_diseases = [
+        disease for disease, spec in DISEASE_SPECIALITY_MAP.items()
+        if spec == doctor.speciality
+    ]
+    return Patient.objects.filter(
+        Q(assigned_doctor=doctor) |
+        Q(assigned_doctor__isnull=True, disease__in=matching_diseases)
+    ).distinct()
 
 
 class StyledLoginView(LoginView):
@@ -30,9 +90,15 @@ def _is_admin(user):
     return user.is_authenticated and user.is_staff
 
 
+def _is_doctor(user):
+    return user.is_authenticated and hasattr(user, 'doctor_profile')
+
+
 def home(request):
     if request.user.is_authenticated and request.user.is_staff:
         return redirect('dashboard')
+    if request.user.is_authenticated and hasattr(request.user, 'doctor_profile'):
+        return redirect('doctor_portal')
     return render(request, 'hospital/home.html')
 
 
@@ -54,7 +120,18 @@ def register_view(request):
 
 
 def add_patient(request):
-    return redirect('book_appointment')
+    if request.method == 'POST':
+        form = PatientForm(request.POST)
+        if form.is_valid():
+            patient = form.save(commit=False)
+            patient.assigned_doctor = _assign_doctor_for_disease(patient.disease)
+            patient.save()
+            messages.success(request, 'Your registration has been submitted successfully.')
+            return redirect('home')
+        messages.error(request, 'Please fix the highlighted fields.')
+    else:
+        form = PatientForm()
+    return render(request, 'hospital/register_patient.html', {'form': form})
 
 
 @user_passes_test(_is_admin, login_url='login')
@@ -271,6 +348,91 @@ def logout_view(request):
     return redirect('home')
 
 
+# ── Doctor Portal ──
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_portal(request):
+    """Doctor's own dashboard — sees assigned patients + unassigned patients matching their speciality."""
+    doctor = request.user.doctor_profile.doctor
+    patients = _get_doctor_patients(doctor)
+
+    status_filter = request.GET.get('status', 'all')
+    query = request.GET.get('q', '').strip()
+
+    if query:
+        patients = patients.filter(name__icontains=query)
+    if status_filter in [Patient.STATUS_PENDING, Patient.STATUS_ACCEPTED, Patient.STATUS_REJECTED]:
+        patients = patients.filter(status=status_filter)
+
+    base_qs  = _get_doctor_patients(doctor)
+    total    = base_qs.count()
+    pending  = base_qs.filter(status=Patient.STATUS_PENDING).count()
+    accepted = base_qs.filter(status=Patient.STATUS_ACCEPTED).count()
+    rejected = base_qs.filter(status=Patient.STATUS_REJECTED).count()
+
+    paginator = Paginator(patients.order_by('-created_at'), 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'hospital/doctor_portal.html', {
+        'doctor': doctor,
+        'patients': page_obj,
+        'page_obj': page_obj,
+        'status_filter': status_filter,
+        'query': query,
+        'total': total,
+        'pending': pending,
+        'accepted': accepted,
+        'rejected': rejected,
+    })
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_accept_patient(request, pk):
+    doctor = request.user.doctor_profile.doctor
+    patient = get_object_or_404(_get_doctor_patients(doctor), pk=pk)
+    if request.method == 'POST':
+        patient.assigned_doctor = doctor  # lock assignment on action
+        patient.status = Patient.STATUS_ACCEPTED
+        patient.save()
+        _send_patient_email(patient, accepted=True)
+        messages.success(request, f'{patient.name} has been accepted and notified by email.')
+    return redirect('doctor_portal')
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_reject_patient(request, pk):
+    doctor = request.user.doctor_profile.doctor
+    patient = get_object_or_404(_get_doctor_patients(doctor), pk=pk)
+    if request.method == 'POST':
+        patient.assigned_doctor = doctor  # lock assignment on action
+        patient.status = Patient.STATUS_REJECTED
+        patient.save()
+        _send_patient_email(patient, accepted=False)
+        messages.success(request, f'{patient.name} has been rejected and notified by email.')
+    return redirect('doctor_portal')
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_delete_patient(request, pk):
+    doctor = request.user.doctor_profile.doctor
+    patient = get_object_or_404(_get_doctor_patients(doctor), pk=pk)
+    if request.method == 'POST':
+        name = patient.name
+        patient.delete()
+        messages.success(request, f'Patient record for {name} has been deleted.')
+    return redirect('doctor_portal')
+
+
+@user_passes_test(_is_doctor, login_url='login')
+def doctor_patient_detail(request, pk):
+    doctor = request.user.doctor_profile.doctor
+    patient = get_object_or_404(_get_doctor_patients(doctor), pk=pk)
+    return render(request, 'hospital/doctor_patient_detail.html', {
+        'patient': patient,
+        'doctor': doctor,
+    })
+
+
 @user_passes_test(_is_admin, login_url='login')
 def doctors_dashboard(request):
     search = request.GET.get('q', '').strip()
@@ -385,6 +547,8 @@ def doctor_availability(request, pk):
                 # if doctor is now absent/on_leave, deactivate all their slots instantly
                 if doctor.availability in ['unavailable', 'on_leave']:
                     doctor.slots.all().update(is_present=False)
+                elif doctor.availability == 'available':
+                    doctor.slots.all().update(is_present=True)
                 messages.success(request, f'Dr. {doctor.name}\'s availability updated.')
                 return redirect('doctor_availability', pk=pk)
 
@@ -549,7 +713,7 @@ def ajax_doctors_by_speciality(request):
     today = now().date()
     speciality = request.GET.get('speciality', '').strip()
     doctors = Doctor.objects.filter(
-        speciality=speciality,
+        speciality__iexact=speciality,
         availability='available'
     ).values('id', 'name', 'department', 'availability')
     result = []
@@ -608,11 +772,6 @@ def ajax_slots_by_doctor(request):
 
 # ── Patient Appointment Booking ──
 def book_appointment(request):
-    # only show specialities where at least one doctor is available
-    specialities = Doctor.objects.filter(
-        availability='available'
-    ).values_list('speciality', flat=True).distinct()
-
     if request.method == 'POST':
         slot_id   = request.POST.get('slot_id')
         doctor_id = request.POST.get('doctor_id')
@@ -620,9 +779,7 @@ def book_appointment(request):
 
         if not slot_id or not doctor_id:
             messages.error(request, 'Please select a doctor and a slot.')
-            return render(request, 'hospital/book_appointment.html', {
-                'specialities': specialities, 'form': form
-            })
+            return render(request, 'hospital/book_appointment.html', {'form': form})
 
         doctor = get_object_or_404(Doctor, pk=doctor_id)
         slot   = get_object_or_404(DoctorSlot, pk=slot_id)
@@ -630,18 +787,18 @@ def book_appointment(request):
         # hard guard: reject booking if doctor is absent
         if doctor.availability != 'available' or not slot.is_present:
             messages.error(request, 'This doctor is currently unavailable. Please choose another.')
-            return redirect('book_appointment')
+            return render(request, 'hospital/book_appointment.html', {'form': form})
 
         # guard: slot fully booked
         if slot.is_full():
             messages.error(request, 'This slot is fully booked. Please choose another slot.')
-            return redirect('book_appointment')
+            return render(request, 'hospital/book_appointment.html', {'form': form})
 
         # guard: same phone already booked this slot
         phone = request.POST.get('patient_phone', '').strip()
         if Appointment.objects.filter(slot=slot, patient_phone=phone).exclude(status=Appointment.STATUS_CANCELLED).exists():
             messages.error(request, 'You have already booked this slot. Please choose a different slot.')
-            return redirect('book_appointment')
+            return render(request, 'hospital/book_appointment.html', {'form': form})
 
         if form.is_valid():
             appointment = form.save(commit=False)
@@ -651,14 +808,12 @@ def book_appointment(request):
             return redirect('appointment_confirmation', pk=appointment.pk)
         else:
             messages.error(request, 'Please fill in all required fields.')
+            return render(request, 'hospital/book_appointment.html', {'form': form})
 
     else:
         form = AppointmentForm()
 
-    return render(request, 'hospital/book_appointment.html', {
-        'specialities': specialities,
-        'form': form,
-    })
+    return render(request, 'hospital/book_appointment.html', {'form': form})
 
 
 def appointment_confirmation(request, pk):

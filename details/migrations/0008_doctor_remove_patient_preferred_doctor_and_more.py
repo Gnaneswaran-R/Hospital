@@ -27,10 +27,6 @@ class Migration(migrations.Migration):
                 'ordering': ['name'],
             },
         ),
-        migrations.RemoveField(
-            model_name='patient',
-            name='preferred_doctor',
-        ),
         migrations.AlterField(
             model_name='patient',
             name='name',

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Patient — {{ patient.name }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'doctor_portal' %}" class="btn btn-outline-secondary btn-sm mb-4">&#8592; Back to My Patients</a>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0 p-4">
+
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <h1 class="h4 mb-1">{{ patient.name }}</h1>
+                    <p class="text-muted mb-0">Patient Registration Details</p>
+                </div>
+                <span class="badge rounded-pill fs-6
+                    {% if patient.status == 'accepted' %}bg-success
+                    {% elif patient.status == 'rejected' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ patient.get_status_display }}
+                </span>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Full Name</h6>
+                        <p class="mb-0 fw-semibold">{{ patient.name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Age / Gender</h6>
+                        <p class="mb-0">{{ patient.age }} yrs &middot; {{ patient.get_gender_display }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Phone</h6>
+                        <p class="mb-0">{{ patient.phone }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Email</h6>
+                        <p class="mb-0">{{ patient.email|default:"—" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Address</h6>
+                        <p class="mb-0">{{ patient.address }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Disease / Condition</h6>
+                        <p class="mb-0">
+                            <span class="badge bg-primary bg-opacity-10 text-primary fs-6">{{ patient.disease }}</span>
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Preferred Date</h6>
+                        <p class="mb-0">{{ patient.preferred_date|date:'M d, Y'|default:"—" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Assigned Doctor</h6>
+                        <p class="mb-0">Dr. {{ doctor.name }} ({{ doctor.speciality }})</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-uppercase text-muted small mb-1">Registered On</h6>
+                        <p class="mb-0">{{ patient.created_at|date:'M d, Y g:i A'|default:"—" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h6 class="text-uppercase text-muted small mb-1">Additional Notes</h6>
+                <p class="mb-0 text-muted">{{ patient.notes|default:'No additional notes provided.' }}</p>
+            </div>
+
+            <!-- Accept / Reject Actions -->
+            {% if patient.status == 'pending' %}
+            <div class="d-flex gap-3 mt-2">
+                <form method="post" action="{% url 'doctor_accept_patient' patient.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success px-4"
+                            onclick="return confirm('Accept {{ patient.name }}?')">
+                        <i class="bi bi-check-circle me-1"></i> Accept Patient
+                    </button>
+                </form>
+                <form method="post" action="{% url 'doctor_reject_patient' patient.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger px-4"
+                            onclick="return confirm('Reject {{ patient.name }}?')">
+                        <i class="bi bi-x-circle me-1"></i> Reject Patient
+                    </button>
+                </form>
+                <form method="post" action="{% url 'doctor_delete_patient' patient.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger px-4"
+                            onclick="return confirm('Permanently delete {{ patient.name }}? This cannot be undone.')">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+            {% elif patient.status == 'accepted' %}
+            <div class="d-flex gap-3 mt-2">
+                <div class="alert alert-success d-flex align-items-center gap-2 mb-0 flex-grow-1">
+                    <i class="bi bi-check-circle-fill fs-5"></i>
+                    <span>This patient has been <strong>accepted</strong>.</span>
+                </div>
+                <form method="post" action="{% url 'doctor_delete_patient' patient.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger px-4"
+                            onclick="return confirm('Permanently delete {{ patient.name }}? This cannot be undone.')">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+            {% else %}
+            <div class="d-flex gap-3 mt-2">
+                <div class="alert alert-danger d-flex align-items-center gap-2 mb-0 flex-grow-1">
+                    <i class="bi bi-x-circle-fill fs-5"></i>
+                    <span>This patient has been <strong>rejected</strong>.</span>
+                </div>
+                <form method="post" action="{% url 'doctor_delete_patient' patient.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger px-4"
+                            onclick="return confirm('Permanently delete {{ patient.name }}? This cannot be undone.')">
+                        <i class="bi bi-trash me-1"></i> Delete
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

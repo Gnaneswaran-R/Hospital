@@ -42,7 +42,17 @@
                         <h6 class="text-uppercase text-muted small mb-2">Disease / Symptoms</h6>
                         <p class="mb-0">{{ patient.disease }}</p>
                     </div>
-                    
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-muted small mb-2">Assigned Doctor</h6>
+                        <p class="mb-0">
+                            {% if patient.assigned_doctor %}
+                                Dr. {{ patient.assigned_doctor.name }}
+                                <span class="text-muted small">({{ patient.assigned_doctor.speciality }})</span>
+                            {% else %}
+                                <span class="text-muted">Not assigned</span>
+                            {% endif %}
+                        </p>
+                    </div>
                     <div class="mb-4">
                         <h6 class="text-uppercase text-muted small mb-2">Preferred Date</h6>
                         <p class="mb-0">{{ patient.preferred_date|date:'M d, Y' }}</p>

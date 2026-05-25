@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Doctor(models.Model):
@@ -22,6 +23,15 @@ class Doctor(models.Model):
 
     def __str__(self):
         return f'Dr. {self.name} — {self.department}'
+
+
+class DoctorProfile(models.Model):
+    """Links a Django User account to a Doctor record for doctor portal login."""
+    user   = models.OneToOneField(User, on_delete=models.CASCADE, related_name='doctor_profile')
+    doctor = models.OneToOneField(Doctor, on_delete=models.CASCADE, related_name='profile')
+
+    def __str__(self):
+        return f'{self.user.username} → Dr. {self.doctor.name}'
 
 
 class DoctorSlot(models.Model):
@@ -109,7 +119,11 @@ class Patient(models.Model):
     email = models.EmailField(max_length=254, blank=True, null=True)
     address = models.TextField()
     disease = models.CharField(max_length=200)
-   
+    assigned_doctor = models.ForeignKey(
+        Doctor, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='registered_patients',
+        help_text='Auto-assigned based on disease/speciality'
+    )
     preferred_date = models.DateField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)

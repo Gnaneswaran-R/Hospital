@@ -243,6 +243,34 @@
 
 {% block extra_js %}
 <script>
+    // Helper to convert '8:00 AM' / '2:00 PM' to '08:00' / '14:00'
+    function convert12to24(timeStr) {
+        let [time, modifier] = timeStr.split(' ');
+        let [hours, minutes] = time.split(':');
+        if (hours === '12') {
+            hours = '00';
+        }
+        if (modifier === 'PM') {
+            hours = parseInt(hours, 10) + 12;
+        }
+        hours = String(hours).padStart(2, '0');
+        minutes = String(minutes).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
+
+    // Quick time badges auto-fill time inputs
+    document.querySelectorAll('.quick-time').forEach(badge => {
+        badge.addEventListener('click', () => {
+            const timeVal = convert12to24(badge.textContent.trim());
+            const target = badge.dataset.target;
+            if (target === 'start') {
+                document.getElementById('id_start_time').value = timeVal;
+            } else if (target === 'end') {
+                document.getElementById('id_end_time').value = timeVal;
+            }
+        });
+    });
+
     // Preset buttons auto-fill start and end time inputs
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.addEventListener('click', () => {

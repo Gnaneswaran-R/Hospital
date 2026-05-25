@@ -69,10 +69,10 @@ class DoctorSlotForm(forms.ModelForm):
         model = DoctorSlot
         fields = ['date', 'start_time', 'end_time', 'is_present', 'max_bookings']
         widgets = {
-            'date':       forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'end_time':   forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'is_present': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'date':         forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'start_time':   forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'end_time':     forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'is_present':   forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def clean_max_bookings(self):
@@ -81,6 +81,14 @@ class DoctorSlotForm(forms.ModelForm):
             return 1
         return value
 
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+
+        if start_time and end_time and start_time >= end_time:
+            raise forms.ValidationError('Start time must be before end time.')
+        return cleaned_data
 
 class AppointmentForm(forms.ModelForm):
     GENDER_CHOICES = [('', 'Select Gender'), ('male', 'Male'), ('female', 'Female'), ('other', 'Other')]
@@ -176,6 +184,10 @@ class PatientForm(forms.ModelForm):
         ('Migraine', 'Migraine'),
         ('Epilepsy', 'Epilepsy'),
         ('Depression', 'Depression'),
+        ('Skin Disease', 'Skin Disease'),
+        ('Eczema', 'Eczema'),
+        ('Psoriasis', 'Psoriasis'),
+        ('Acne', 'Acne'),
         ('Other', 'Other'),
     ]
 
