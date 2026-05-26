@@ -124,9 +124,11 @@ def add_patient(request):
         form = PatientForm(request.POST)
         if form.is_valid():
             patient = form.save(commit=False)
-            patient.assigned_doctor = _assign_doctor_for_disease(patient.disease)
+            # No auto-assign — admin will assign a doctor when approving
+            patient.assigned_doctor = None
+            patient.status = Patient.STATUS_PENDING
             patient.save()
-            messages.success(request, 'Your registration has been submitted successfully.')
+            messages.success(request, 'Your registration has been submitted successfully. You will be notified once reviewed.')
             return redirect('home')
         messages.error(request, 'Please fix the highlighted fields.')
     else:
@@ -201,6 +203,7 @@ def dashboard(request):
         'rejected_patients': rejected_patients,
         'pending_patients': pending_patients,
         'all_doctors': all_doctors,
+        'available_doctors_list': Doctor.objects.filter(availability='available').order_by('name'),
         'total_doctors': total_doctors,
         'available_doctors': available_doctors,
         'on_leave_doctors': on_leave_doctors,
@@ -364,11 +367,20 @@ def _send_patient_email(patient, accepted=True):
 @user_passes_test(_is_admin, login_url='login')
 def accept_patient(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
-    patient.status = Patient.STATUS_ACCEPTED
-    patient.save()
-    _send_patient_email(patient, accepted=True)
-    messages.success(request, f'Patient {patient.name} has been accepted and notified by email.')
-    
+    if request.method == 'POST':
+        # Admin must select a doctor before approving
+        doctor_id = request.POST.get('doctor_id')
+        if doctor_id:
+            doctor = get_object_or_404(Doctor, pk=doctor_id)
+            patient.assigned_doctor = doctor
+        elif not patient.assigned_doctor:
+            messages.error(request, f'Please select a doctor for {patient.name} before approving.')
+            next_url = request.POST.get('next') or 'dashboard'
+            return redirect(next_url)
+        patient.status = Patient.STATUS_ACCEPTED
+        patient.save()
+        _send_patient_email(patient, accepted=True)
+        messages.success(request, f'Patient {patient.name} has been accepted (Dr. {patient.assigned_doctor.name}) and notified by email.')
     next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
     return redirect(next_url)
 
