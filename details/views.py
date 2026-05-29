@@ -14,8 +14,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 import openpyxl
 
-from .forms import PatientForm, UserRegistrationForm, DoctorForm, DoctorExcelUploadForm, DoctorAvailabilityForm, DoctorSlotForm, AppointmentForm
-from .models import Patient, Doctor, DoctorSlot, Appointment, DoctorProfile
+from .forms import PatientForm, UserRegistrationForm, DoctorForm, DoctorExcelUploadForm, DoctorAvailabilityForm, DoctorSlotForm, AppointmentForm, DoctorLeaveForm
+from .models import Patient, Doctor, DoctorSlot, Appointment, DoctorProfile, DoctorLeave
 
 
 # ── Disease → Speciality mapping ──
@@ -52,11 +52,11 @@ def _assign_doctor_for_disease(disease):
     """Return the best available doctor for a given disease, or None."""
     speciality = DISEASE_SPECIALITY_MAP.get(disease, 'General Physician')
     doctor = Doctor.objects.filter(
-        speciality__iexact=speciality, availability='available'
+        speciality__iexact=speciality, availability__in=['available', 'on_leave']
     ).first()
     if not doctor:
         # fallback: any available doctor
-        doctor = Doctor.objects.filter(availability='available').first()
+        doctor = Doctor.objects.filter(availability__in=['available', 'on_leave']).first()
     return doctor
 
 
@@ -160,16 +160,43 @@ def dashboard(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # doctors live panel
+    all_doctors = Doctor.objects.all()
+    for d in all_doctors:
+        slots_qs = DoctorSlot.objects.filter(doctor=d, is_present=True, date__gte=today) if d.availability == 'available' else []
+        d.open_slots = sum(
+            1 for s in slots_qs
+            if s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count() < s.max_bookings
+        )
+    total_doctors     = all_doctors.count()
+    available_doctors = all_doctors.filter(availability='available').count()
+    on_leave_doctors  = all_doctors.filter(availability='on_leave').count()
+
+    # Attach related doctors (matching registered disease speciality) to each patient
+    for patient in page_obj:
+        speciality = DISEASE_SPECIALITY_MAP.get(patient.disease, 'General Physician')
+        patient.related_doctors = []
+        for d in all_doctors:
+            if d.speciality.lower() == speciality.lower() and d.availability in ['available', 'on_leave']:
+                if patient.preferred_date:
+                    slots_qs = DoctorSlot.objects.filter(doctor=d, is_present=True, date=patient.preferred_date)
+                else:
+                    slots_qs = DoctorSlot.objects.filter(doctor=d, is_present=True, date__gte=today)
+                
+                open_slots = sum(
+                    1 for s in slots_qs
+                    if s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count() < s.max_bookings
+                )
+                
+                if open_slots > 0:
+                    d.open_slots_for_patient = open_slots
+                    patient.related_doctors.append(d)
+
+
     query_params = request.GET.copy()
     if 'page' in query_params:
         query_params.pop('page')
     current_query = query_params.urlencode()
-
-    # doctors live panel
-    all_doctors = Doctor.objects.all()
-    total_doctors     = all_doctors.count()
-    available_doctors = all_doctors.filter(availability='available').count()
-    on_leave_doctors  = all_doctors.filter(availability='on_leave').count()
 
     # today's appointments
     todays_appointments = Appointment.objects.filter(
@@ -244,8 +271,11 @@ def _send_appointment_email(appointment, accepted=True):
             'Please book another slot or contact our support team for assistance.\n\n'
             'Best regards,\nHospitalCare Team'
         )
-    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
-              [appointment.patient_email], fail_silently=False)
+    try:
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL,
+                  [appointment.patient_email], fail_silently=True)
+    except Exception as e:
+        print(f"Failed to send email to {appointment.patient_email}: {e}")
 
 
 @user_passes_test(_is_admin, login_url='login')
@@ -351,23 +381,57 @@ def _send_patient_email(patient, accepted=True):
     html_message = render_to_string(template_name, {'patient': patient})
     plain_message = strip_tags(html_message)
     
-    send_mail(
-        subject,
-        plain_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [patient.email],
-        html_message=html_message,
-        fail_silently=False
-    )
+    try:
+        send_mail(
+            subject,
+            plain_message,
+            settings.DEFAULT_FROM_EMAIL,
+            [patient.email],
+            html_message=html_message,
+            fail_silently=True
+        )
+    except Exception as e:
+        print(f"Failed to send email to {patient.email}: {e}")
 
 
 @user_passes_test(_is_admin, login_url='login')
 def accept_patient(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
+    if request.method == 'POST':
+        doctor_id = request.POST.get('doctor_id')
+        if doctor_id:
+            doctor = get_object_or_404(Doctor, pk=doctor_id)
+            if patient.preferred_date:
+                slots_qs = DoctorSlot.objects.filter(doctor=doctor, is_present=True, date=patient.preferred_date)
+            else:
+                slots_qs = DoctorSlot.objects.filter(doctor=doctor, is_present=True, date__gte=timezone.now().date())
+            
+            open_slots = sum(
+                1 for s in slots_qs
+                if s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count() < s.max_bookings
+            )
+            if open_slots == 0:
+                messages.error(request, f"Dr. {doctor.name} is unavailable or has 0 open slots on {patient.preferred_date or 'this date'}.")
+                next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
+                return redirect(next_url)
+            patient.assigned_doctor = doctor
+            
+        patient.status = Patient.STATUS_ACCEPTED
+        patient.save()
+        
+        _send_patient_email(patient, accepted=True)
+        if patient.assigned_doctor:
+            messages.success(request, f"Patient {patient.name} has been assigned to Dr. {patient.assigned_doctor.name} and accepted successfully.")
+        else:
+            messages.success(request, f"Patient {patient.name} has been accepted and notified by email.")
+            
+        next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
+        return redirect(next_url)
+
     patient.status = Patient.STATUS_ACCEPTED
     patient.save()
     _send_patient_email(patient, accepted=True)
-    messages.success(request, f'Patient {patient.name} has been accepted and notified by email.')
+    messages.success(request, f"Patient {patient.name} has been accepted and notified by email.")
     
     next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
     return redirect(next_url)
@@ -430,6 +494,11 @@ def doctor_portal(request):
     appt_paginator = Paginator(appointments_qs.order_by('-booked_at'), 10)
     appt_page_obj = appt_paginator.get_page(request.GET.get('appt_page'))
 
+    from django.utils.timezone import now
+    today = now().date()
+    active_leaves = doctor.leaves.filter(end_date__gte=today)
+    leave_form = DoctorLeaveForm()
+
     return render(request, 'hospital/doctor_portal.html', {
         'doctor': doctor,
         'patients': page_obj,
@@ -447,6 +516,9 @@ def doctor_portal(request):
         'appt_pending': appt_pending,
         'appt_accepted': appt_accepted,
         'appt_rejected': appt_rejected,
+        # leave data
+        'active_leaves': active_leaves,
+        'leave_form': leave_form,
     })
 
 
@@ -500,6 +572,169 @@ def doctor_reject_appointment(request, pk):
         _send_appointment_email(appointment, accepted=False)
         messages.success(request, f'{appointment.patient_name}\'s appointment has been rejected and they have been notified by email.')
     return redirect('doctor_portal')
+
+
+@login_required
+def doctor_apply_leave(request):
+    if request.method == 'POST':
+        # Admin can pass doctor_id, otherwise use the logged-in doctor
+        doctor_id = request.POST.get('doctor_id')
+        if request.user.is_staff and doctor_id:
+            doctor = get_object_or_404(Doctor, pk=doctor_id)
+        elif hasattr(request.user, 'doctor_profile'):
+            doctor = request.user.doctor_profile.doctor
+        else:
+            messages.error(request, "Unauthorized leave application.")
+            return redirect('home')
+
+        form = DoctorLeaveForm(request.POST)
+        if form.is_valid():
+            start_date = form.cleaned_data['start_date']
+            end_date = form.cleaned_data['end_date']
+            reason = form.cleaned_data.get('reason', '')
+            
+            num_days = (end_date - start_date).days + 1
+            
+            # Create the leave record
+            leave = DoctorLeave.objects.create(
+                doctor=doctor,
+                start_date=start_date,
+                end_date=end_date,
+                reason=reason
+            )
+            
+            # Deactivate all slots in this date range
+            slots = DoctorSlot.objects.filter(
+                doctor=doctor,
+                date__gte=start_date,
+                date__lte=end_date
+            )
+            
+            # Cancel all pending and accepted appointments in this date range
+            cancelled_count = 0
+            for slot in slots:
+                appointments = slot.appointments.exclude(status=Appointment.STATUS_CANCELLED)
+                for appt in appointments:
+                    appt.status = Appointment.STATUS_CANCELLED
+                    appt.save()
+                    _send_appointment_email(appt, accepted=False)
+                    cancelled_count += 1
+            
+            # Deactivate the slots
+            slots.update(is_present=False)
+            
+            # If the leave range covers today, update doctor availability
+            from django.utils.timezone import now
+            today = now().date()
+            if start_date <= today <= end_date:
+                doctor.availability = 'on_leave'
+                doctor.save()
+                
+            msg = f'Leave applied successfully for {num_days} days (from {start_date} to {end_date}).'
+            if cancelled_count > 0:
+                msg += f' {cancelled_count} appointment(s) in this range were cancelled and patients notified.'
+            messages.success(request, msg)
+        else:
+            for error_list in form.errors.values():
+                for error in error_list:
+                    messages.error(request, error)
+                    
+    next_url = request.META.get('HTTP_REFERER') or 'doctor_portal'
+    return redirect(next_url)
+
+
+@login_required
+def doctor_cancel_leave(request, pk):
+    leave = get_object_or_404(DoctorLeave, pk=pk)
+    
+    # Permission check: must be admin OR the doctor themselves
+    is_admin = request.user.is_staff
+    is_matching_doctor = hasattr(request.user, 'doctor_profile') and request.user.doctor_profile.doctor == leave.doctor
+    if not (is_admin or is_matching_doctor):
+        messages.error(request, "You do not have permission.")
+        return redirect('home')
+
+    doctor = leave.doctor
+    if request.method == 'POST':
+        start_date = leave.start_date
+        end_date = leave.end_date
+        
+        # Delete the leave record
+        leave.delete()
+        
+        # Restore doctor slots to is_present=True for slots in this range
+        slots = DoctorSlot.objects.filter(
+            doctor=doctor,
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        slots.update(is_present=True)
+        
+        # If today fell within this leave, set doctor availability back to 'available'
+        from django.utils.timezone import now
+        today = now().date()
+        if start_date <= today <= end_date:
+            doctor.availability = 'available'
+            doctor.save()
+            
+        messages.success(request, 'Leave cancelled successfully. Your slots in this period are now active.')
+        
+    next_url = request.META.get('HTTP_REFERER') or 'doctor_portal'
+    return redirect(next_url)
+
+
+@login_required
+def doctor_apply_slot_leave(request, pk):
+    slot = get_object_or_404(DoctorSlot, pk=pk)
+    
+    # Permission check: must be admin OR the doctor themselves
+    is_admin = request.user.is_staff
+    is_matching_doctor = hasattr(request.user, 'doctor_profile') and request.user.doctor_profile.doctor == slot.doctor
+    if not (is_admin or is_matching_doctor):
+        messages.error(request, "You do not have permission.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        slot.is_present = False
+        slot.save()
+        
+        # Cancel all pending and accepted appointments in this slot
+        appointments = slot.appointments.exclude(status=Appointment.STATUS_CANCELLED)
+        cancelled_count = 0
+        for appt in appointments:
+            appt.status = Appointment.STATUS_CANCELLED
+            appt.save()
+            _send_appointment_email(appt, accepted=False)
+            cancelled_count += 1
+            
+        msg = f'Leave applied successfully for slot {slot.start_time.strftime("%I:%M %p")} - {slot.end_time.strftime("%I:%M %p")} on {slot.date}.'
+        if cancelled_count > 0:
+            msg += f' {cancelled_count} appointment(s) in this slot were cancelled and patients notified.'
+        messages.success(request, msg)
+        
+    next_url = request.META.get('HTTP_REFERER') or 'doctor_portal'
+    return redirect(next_url)
+
+
+@login_required
+def doctor_reactivate_slot(request, pk):
+    slot = get_object_or_404(DoctorSlot, pk=pk)
+    
+    # Permission check: must be admin OR the doctor themselves
+    is_admin = request.user.is_staff
+    is_matching_doctor = hasattr(request.user, 'doctor_profile') and request.user.doctor_profile.doctor == slot.doctor
+    if not (is_admin or is_matching_doctor):
+        messages.error(request, "You do not have permission.")
+        return redirect('home')
+
+    if request.method == 'POST':
+        slot.is_present = True
+        slot.save()
+        
+        messages.success(request, f'Slot {slot.start_time.strftime("%I:%M %p")} - {slot.end_time.strftime("%I:%M %p")} on {slot.date} has been reactivated.')
+        
+    next_url = request.META.get('HTTP_REFERER') or 'doctor_portal'
+    return redirect(next_url)
 
 
 @user_passes_test(_is_doctor, login_url='login')
@@ -621,10 +856,20 @@ def edit_doctor(request, pk):
     return render(request, 'hospital/edit_doctor.html', {'form': form, 'doctor': doctor})
 
 
-@user_passes_test(_is_admin, login_url='login')
+@login_required
 def doctor_availability(request, pk):
+    # Permission check: must be admin OR the doctor themselves
+    is_admin = request.user.is_staff
+    is_matching_doctor = hasattr(request.user, 'doctor_profile') and request.user.doctor_profile.doctor.pk == pk
+    if not (is_admin or is_matching_doctor):
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('home')
+
+    from django.utils.timezone import now
+    today = now().date()
+
     doctor = get_object_or_404(Doctor, pk=pk)
-    slots = doctor.slots.all()
+    slots = doctor.slots.filter(date__gte=today)
     avail_form = DoctorAvailabilityForm(instance=doctor)
     slot_form = DoctorSlotForm()
 
@@ -657,13 +902,29 @@ def doctor_availability(request, pk):
     if date_filter:
         slots = slots.filter(date=date_filter)
 
+    active_leaves = doctor.leaves.filter(end_date__gte=today)
+    
+    leave_dates = set()
+    for leave in doctor.leaves.all():
+        current_d = leave.start_date
+        while current_d <= leave.end_date:
+            leave_dates.add(current_d.strftime('%Y-%m-%d'))
+            current_d += timedelta(days=1)
+
+    leave_form = DoctorLeaveForm()
+
     return render(request, 'hospital/doctor_availability.html', {
         'doctor': doctor,
         'slots': slots,
         'avail_form': avail_form,
         'slot_form': slot_form,
         'date_filter': date_filter,
+        # leave system context
+        'active_leaves': active_leaves,
+        'leave_dates': leave_dates,
+        'leave_form': leave_form,
     })
+
 
 
 @user_passes_test(_is_admin, login_url='login')
@@ -738,6 +999,9 @@ import time as _time
 def sse_doctor_updates(request):
     from django.http import StreamingHttpResponse
     from django.utils.timezone import now
+    from django.db.models import Count, Q
+    from collections import defaultdict
+    import json
 
     def event_stream():
         last = None
@@ -750,20 +1014,41 @@ def sse_doctor_updates(request):
                     'appointment_start', 'appointment_end'
                 )
             )
+
+            # Query all slots starting today and annotate with active appointments count
+            slots_annotated = DoctorSlot.objects.filter(
+                is_present=True,
+                date__gte=today
+            ).annotate(
+                active_appt_count=Count(
+                    'appointments',
+                    filter=~Q(appointments__status=Appointment.STATUS_CANCELLED)
+                )
+            ).values('doctor_id', 'max_bookings', 'active_appt_count')
+
+            # Group annotated slot counts by doctor_id
+            slots_by_doctor = defaultdict(list)
+            for s in slots_annotated:
+                slots_by_doctor[s['doctor_id']].append(s)
+
             # attach open slot count per doctor
             doctors = []
             for d in doctors_qs:
-                slots_qs = DoctorSlot.objects.filter(
-                    doctor_id=d['id'], is_present=True, date__gte=today
-                ) if d['availability'] == 'available' else []
-                open_slots = sum(
-                    1 for s in slots_qs
-                    if s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count() < s.max_bookings
-                )
+                if d['availability'] == 'available':
+                    doctor_slots = slots_by_doctor[d['id']]
+                    open_slots = sum(
+                        1 for s in doctor_slots
+                        if s['active_appt_count'] < s['max_bookings']
+                    )
+                    has_slots = len(doctor_slots) > 0
+                else:
+                    open_slots = 0
+                    has_slots = False
+
                 doctors.append({
                     **d,
                     'open_slots': open_slots,
-                    'has_slots': len(slots_qs) > 0
+                    'has_slots': has_slots
                 })
 
             specialities = list(
@@ -780,7 +1065,6 @@ def sse_doctor_updates(request):
                 'on_leave_doctors':    Doctor.objects.filter(availability='on_leave').count(),
                 'unavailable_doctors': Doctor.objects.filter(availability='unavailable').count(),
             }
-            import json
             payload = json.dumps({
                 'doctors': doctors,
                 'specialities': specialities,
@@ -860,50 +1144,89 @@ def ajax_slots_by_doctor(request):
     return JsonResponse({'slots': data})
 
 
+# ── AJAX: return available dates for a disease's doctors ──
+def ajax_available_dates(request):
+    from django.utils.timezone import now
+    today = now().date()
+    disease = request.GET.get('disease', '').strip()
+    speciality = DISEASE_SPECIALITY_MAP.get(disease, 'General Physician')
+
+    # Find all available doctors for this speciality
+    doctors = Doctor.objects.filter(speciality__iexact=speciality, availability='available')
+    
+    # If no doctors exist for this speciality, fallback to all available doctors
+    if not doctors.exists():
+        doctors = Doctor.objects.filter(availability='available')
+
+    # Get distinct dates from active/present slots for these doctors that are not fully booked
+    slots = DoctorSlot.objects.filter(
+        doctor__in=doctors,
+        is_present=True,
+        date__gte=today
+    )
+    
+    available_dates = set()
+    for s in slots:
+        booked = s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count()
+        if booked < s.max_bookings:
+            available_dates.add(s.date.strftime('%Y-%m-%d'))
+            
+    return JsonResponse({'dates': sorted(list(available_dates))})
+
+
+# ── AJAX: return available slot timings for a disease's doctors on a specific date ──
+def ajax_available_times(request):
+    from datetime import datetime
+    disease = request.GET.get('disease', '').strip()
+    date_str = request.GET.get('date', '').strip()
+    if not disease or not date_str:
+        return JsonResponse({'times': []})
+
+    try:
+        pref_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'times': []})
+
+    speciality = DISEASE_SPECIALITY_MAP.get(disease, 'General Physician')
+    doctors = Doctor.objects.filter(speciality__iexact=speciality, availability='available')
+    if not doctors.exists():
+        doctors = Doctor.objects.filter(availability='available')
+
+    slots = DoctorSlot.objects.filter(
+        doctor__in=doctors,
+        is_present=True,
+        date=pref_date
+    )
+
+    times = []
+    seen = set()
+    for s in slots:
+        booked = s.appointments.exclude(status=Appointment.STATUS_CANCELLED).count()
+        if booked < s.max_bookings:
+            time_str = f"{s.start_time.strftime('%I:%M %p')} - {s.end_time.strftime('%I:%M %p')}"
+            if time_str not in seen:
+                seen.add(time_str)
+                times.append({
+                    'value': time_str,
+                    'label': time_str
+                })
+    return JsonResponse({'times': times})
+
+
 # ── Patient Appointment Booking ──
 def book_appointment(request):
     if request.method == 'POST':
-        slot_id   = request.POST.get('slot_id')
-        doctor_id = request.POST.get('doctor_id')
-        form      = AppointmentForm(request.POST)
-
-        if not slot_id or not doctor_id:
-            messages.error(request, 'Please select a doctor and a slot.')
-            return render(request, 'hospital/book_appointment.html', {'form': form})
-
-        doctor = get_object_or_404(Doctor, pk=doctor_id)
-        slot   = get_object_or_404(DoctorSlot, pk=slot_id)
-
-        # hard guard: reject booking if doctor is absent
-        if doctor.availability != 'available' or not slot.is_present:
-            messages.error(request, 'This doctor is currently unavailable. Please choose another.')
-            return render(request, 'hospital/book_appointment.html', {'form': form})
-
-        # guard: slot fully booked
-        if slot.is_full():
-            messages.error(request, 'This slot is fully booked. Please choose another slot.')
-            return render(request, 'hospital/book_appointment.html', {'form': form})
-
-        # guard: same phone already booked this slot
-        phone = request.POST.get('patient_phone', '').strip()
-        if Appointment.objects.filter(slot=slot, patient_phone=phone).exclude(status=Appointment.STATUS_CANCELLED).exists():
-            messages.error(request, 'You have already booked this slot. Please choose a different slot.')
-            return render(request, 'hospital/book_appointment.html', {'form': form})
-
+        form = PatientForm(request.POST)
         if form.is_valid():
-            appointment = form.save(commit=False)
-            appointment.doctor = doctor
-            appointment.slot   = slot
-            appointment.status = Appointment.STATUS_PENDING  # always starts pending
-            appointment.save()
-            # No email yet — doctor must approve first
-            return redirect('appointment_pending', pk=appointment.pk)
+            patient = form.save(commit=False)
+            patient.status = Patient.STATUS_PENDING
+            patient.save()
+            messages.success(request, 'Your registration details have been submitted successfully.')
+            return redirect('appointment_pending', pk=patient.pk)
         else:
-            messages.error(request, 'Please fill in all required fields.')
-            return render(request, 'hospital/book_appointment.html', {'form': form})
-
+            messages.error(request, 'Please fix the highlighted fields.')
     else:
-        form = AppointmentForm()
+        form = PatientForm()
 
     return render(request, 'hospital/book_appointment.html', {'form': form})
 
@@ -918,7 +1241,11 @@ def appointment_confirmation(request, pk):
 
 def appointment_pending(request, pk):
     """Shown right after patient submits a booking — awaiting doctor approval."""
-    appointment = get_object_or_404(Appointment, pk=pk)
+    appointment = Appointment.objects.filter(pk=pk).first()
+    patient = None
+    if not appointment:
+        patient = get_object_or_404(Patient, pk=pk)
     return render(request, 'hospital/appointment_pending.html', {
-        'appointment': appointment
+        'appointment': appointment,
+        'patient': patient
     })

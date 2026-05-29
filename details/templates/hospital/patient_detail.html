@@ -54,8 +54,13 @@
                         </p>
                     </div>
                     <div class="mb-4">
-                        <h6 class="text-uppercase text-muted small mb-2">Preferred Date</h6>
-                        <p class="mb-0">{{ patient.preferred_date|date:'M d, Y' }}</p>
+                        <h6 class="text-uppercase text-muted small mb-2">Preferred Date & Time</h6>
+                        <p class="mb-0">
+                            {{ patient.preferred_date|date:'M d, Y'|default:"—" }}
+                            {% if patient.preferred_time %}
+                                <span class="badge bg-light text-dark ms-2 border">{{ patient.preferred_time }}</span>
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>

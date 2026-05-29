@@ -126,6 +126,7 @@ class Patient(models.Model):
         help_text='Auto-assigned based on disease/speciality'
     )
     preferred_date = models.DateField(blank=True, null=True)
+    preferred_time = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
@@ -139,3 +140,22 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_status_display()})"
+
+
+class DoctorLeave(models.Model):
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='leaves')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    reason = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f'Dr. {self.doctor.name} | {self.start_date} to {self.end_date}'
+
+    @property
+    def duration(self):
+        return (self.end_date - self.start_date).days + 1
+

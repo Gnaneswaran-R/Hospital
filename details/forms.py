@@ -206,15 +206,52 @@ class PatientForm(forms.ModelForm):
             'address',
             'disease',
             'preferred_date',
+            'preferred_time',
             'notes',
         ]
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'John Doe'}),
-            'age': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '34'}),
+            'age': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0'}),
             'gender': forms.Select(attrs={'class': 'form-select'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '9876543210'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Mobile Number'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'patient@example.com'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': '123 Main Street'}),
             'preferred_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'preferred_time': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 09:30 AM - 10:30 AM'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Additional symptoms or notes'}),
         }
+
+
+class DoctorLeaveForm(forms.Form):
+    start_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label='Start Date'
+    )
+    end_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        label='End Date'
+    )
+    reason = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Personal leave'}),
+        label='Reason (Optional)'
+    )
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get('start_date')
+        from django.utils.timezone import now
+        if start_date < now().date():
+            raise forms.ValidationError('Start date cannot be in the past.')
+        return start_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        if start_date and end_date and end_date < start_date:
+            raise forms.ValidationError('End date must be on or after start date.')
+        return cleaned_data
+
+    
+
+

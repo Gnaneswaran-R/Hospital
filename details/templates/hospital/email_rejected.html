@@ -21,6 +21,9 @@
         <p style="margin:5px 0;color:#333;font-size:14px;"><strong>Patient Name:</strong> {{ patient.name }}</p>
         <p style="margin:5px 0;color:#333;font-size:14px;"><strong>Disease / Condition:</strong> {{ patient.disease }}</p>
         <p style="margin:5px 0;color:#333;font-size:14px;"><strong>Requested Date:</strong> {{ patient.preferred_date }}</p>
+        {% if patient.preferred_time %}
+        <p style="margin:5px 0;color:#333;font-size:14px;"><strong>Requested Time:</strong> {{ patient.preferred_time }}</p>
+        {% endif %}
       </div>
 
       <p style="color:#555;font-size:14px;">

@@ -12,8 +12,12 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-white shadow-sm sticky-top bg-white">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="{% url 'home' %}">
-                <i class="bi bi-hospital-fill fs-4"></i> HospitalCare
+            <a class="navbar-brand fw-bold text-primary d-flex align-items-center" href="{% url 'home' %}">
+                <svg class="me-2 text-primary" width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" fill-opacity="0.1" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+                    <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                HospitalCare
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -27,13 +31,26 @@
                 <div class="d-flex gap-2 ms-lg-3">
                     {% if user.is_authenticated %}
                         {% if user.is_staff %}
-                        <a class="btn btn-outline-primary btn-sm" href="{% url 'doctors_dashboard' %}"><i class="bi bi-person-badge me-1"></i>Doctors</a>
+                        <a class="btn btn-outline-primary btn-sm d-flex align-items-center" href="{% url 'doctors_dashboard' %}">
+                            <svg class="me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Doctors
+                        </a>
                         {% elif user.doctor_profile %}
-                        <a class="btn btn-outline-primary btn-sm" href="{% url 'doctor_portal' %}"><i class="bi bi-clipboard2-pulse me-1"></i>My Patients</a>
+                        <a class="btn btn-outline-primary btn-sm d-flex align-items-center" href="{% url 'doctor_portal' %}">
+                            <svg class="me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            My Patients
+                        </a>
                         {% endif %}
                         <a class="btn btn-secondary btn-sm" href="{% url 'logout' %}">Logout</a>
                     {% else %}
-                        <a class="btn btn-primary btn-sm" href="{% url 'book_appointment' %}"><i class="bi bi-calendar-plus me-1"></i>Book Appointment</a>
                         <a class="btn btn-outline-secondary btn-sm" href="{% url 'login' %}">Staff Login</a>
                     {% endif %}
                 </div>

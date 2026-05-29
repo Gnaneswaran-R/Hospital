@@ -52,8 +52,13 @@
                         </p>
                     </div>
                     <div class="mb-3">
-                        <h6 class="text-uppercase text-muted small mb-1">Preferred Date</h6>
-                        <p class="mb-0">{{ patient.preferred_date|date:'M d, Y'|default:"—" }}</p>
+                        <h6 class="text-uppercase text-muted small mb-1">Preferred Date & Time</h6>
+                        <p class="mb-0">
+                            {{ patient.preferred_date|date:'M d, Y'|default:"—" }}
+                            {% if patient.preferred_time %}
+                                <span class="badge bg-light text-dark border ms-2" style="font-size: 11px;">{{ patient.preferred_time }}</span>
+                            {% endif %}
+                        </p>
                     </div>
                     <div class="mb-3">
                         <h6 class="text-uppercase text-muted small mb-1">Assigned Doctor</h6>

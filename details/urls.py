@@ -25,6 +25,8 @@ urlpatterns = [
     path('book/pending/<int:pk>/', views.appointment_pending, name='appointment_pending'),
     path('ajax/doctors/', views.ajax_doctors_by_speciality, name='ajax_doctors_by_speciality'),
     path('ajax/slots/', views.ajax_slots_by_doctor, name='ajax_slots_by_doctor'),
+    path('ajax/available-dates/', views.ajax_available_dates, name='ajax_available_dates'),
+    path('ajax/available-times/', views.ajax_available_times, name='ajax_available_times'),
     path('ajax/doctor-state/', views.ajax_doctor_state, name='ajax_doctor_state'),
     path('ajax/dashboard-stats/', views.ajax_dashboard_stats, name='ajax_dashboard_stats'),
     path('sse/doctor-updates/', views.sse_doctor_updates, name='sse_doctor_updates'),
@@ -36,4 +38,9 @@ urlpatterns = [
     path('portal/patients/<int:pk>/delete/', views.doctor_delete_patient, name='doctor_delete_patient'),
     path('portal/appointments/<int:pk>/accept/', views.doctor_accept_appointment, name='doctor_accept_appointment'),
     path('portal/appointments/<int:pk>/reject/', views.doctor_reject_appointment, name='doctor_reject_appointment'),
+    path('portal/leave/apply/', views.doctor_apply_leave, name='doctor_apply_leave'),
+    path('portal/leave/<int:pk>/cancel/', views.doctor_cancel_leave, name='doctor_cancel_leave'),
+    path('slots/<int:pk>/apply-leave/', views.doctor_apply_slot_leave, name='doctor_apply_slot_leave'),
+    path('slots/<int:pk>/reactivate/', views.doctor_reactivate_slot, name='doctor_reactivate_slot'),
 ]
+
