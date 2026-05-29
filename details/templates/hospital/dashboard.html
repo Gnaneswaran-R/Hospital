@@ -27,12 +27,231 @@
     </div>
 </div>
 
+<!-- ── Stat Cards ── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #0d6efd !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-people-fill text-primary"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Total Patients</p>
+                    <h3 class="mb-0 fw-bold" id="stat-total">{{ total_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #198754 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Accepted</p>
+                    <h3 class="mb-0 fw-bold text-success" id="stat-accepted">{{ accepted_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #dc3545 !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-x-circle-fill text-danger"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Rejected</p>
+                    <h3 class="mb-0 fw-bold text-danger" id="stat-rejected">{{ rejected_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #6c757d !important;">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
+                    <i class="bi bi-hourglass-split text-secondary"></i>
+                </div>
+                <div>
+                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Pending</p>
+                    <h3 class="mb-0 fw-bold text-secondary" id="stat-pending">{{ pending_patients }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-<!-- ── Side Panels: Doctor Live Status + Appointment Requests Summary ── -->
-<div class="row g-4 mb-4">
-    <!-- Doctor Live Status -->
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+<!-- ── Main Grid: Patients Table + Side Panels ── -->
+<div class="row g-4">
+
+    <!-- LEFT: Patients Table -->
+    <div class="col-lg-8">
+
+        <!-- Filters -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body py-3">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-12 col-md-4">
+                        <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="🔍 Search by name">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                            <option value="pending"  {% if status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <select name="disease" class="form-select form-select-sm">
+                            <option value="">All Diseases</option>
+                            <option value="Diabetes" {% if disease_filter == 'Diabetes' %}selected{% endif %}>Diabetes</option>
+                            <option value="Hypertension" {% if disease_filter == 'Hypertension' %}selected{% endif %}>Hypertension</option>
+                            <option value="Asthma" {% if disease_filter == 'Asthma' %}selected{% endif %}>Asthma</option>
+                            <option value="Heart Disease" {% if disease_filter == 'Heart Disease' %}selected{% endif %}>Heart Disease</option>
+                            <option value="Tuberculosis" {% if disease_filter == 'Tuberculosis' %}selected{% endif %}>Tuberculosis</option>
+                            <option value="Cancer" {% if disease_filter == 'Cancer' %}selected{% endif %}>Cancer</option>
+                            <option value="Kidney Disease" {% if disease_filter == 'Kidney Disease' %}selected{% endif %}>Kidney Disease</option>
+                            <option value="Liver Disease" {% if disease_filter == 'Liver Disease' %}selected{% endif %}>Liver Disease</option>
+                            <option value="Arthritis" {% if disease_filter == 'Arthritis' %}selected{% endif %}>Arthritis</option>
+                            <option value="Migraine" {% if disease_filter == 'Migraine' %}selected{% endif %}>Migraine</option>
+                            <option value="Depression" {% if disease_filter == 'Depression' %}selected{% endif %}>Depression</option>
+                            <option value="Other" {% if disease_filter == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2 text-primary"></i>Patient Registrations</h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary">{{ total_patients }} total</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Disease</th>
+                            <th>Assigned Doctor</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'patient_detail' patient.pk %}" class="text-decoration-none fw-semibold">{{ patient.name }}</a>
+                                <div class="text-muted" style="font-size:11px">{{ patient.email|default:"—" }}</div>
+                            </td>
+                            <td>{{ patient.disease }}</td>
+                            <td>
+                                {% if patient.assigned_doctor %}
+                                    <span class="small">Dr. {{ patient.assigned_doctor.name }}</span>
+                                    <div class="text-muted" style="font-size:11px">{{ patient.assigned_doctor.speciality }}</div>
+                                {% else %}
+                                    <span class="text-muted small fst-italic">Not assigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ patient.phone }}</td>
+                            <td>
+                                <span class="badge rounded-pill
+                                    {% if patient.status == 'accepted' %}bg-success
+                                    {% elif patient.status == 'rejected' %}bg-danger
+                                    {% else %}bg-warning text-dark{% endif %}">
+                                    {{ patient.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if patient.status == 'pending' %}
+                                <!-- Accept with doctor selection -->
+                                <form method="post" action="{% url 'accept_patient' patient.pk %}" class="d-flex flex-column gap-1" style="min-width:180px">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <select name="doctor_id" class="form-select form-select-sm" required>
+                                        <option value="">— Assign doctor —</option>
+                                        {% for doc in available_doctors_list %}
+                                        <option value="{{ doc.pk }}">Dr. {{ doc.name }} ({{ doc.speciality }})</option>
+                                        {% empty %}
+                                        <option disabled>No available doctors</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="d-flex gap-1">
+                                        <button type="submit" class="btn btn-xs btn-success flex-fill"
+                                                style="font-size:11px"
+                                                onclick="return this.form.doctor_id.value ? confirm('Approve {{ patient.name }} and assign selected doctor?') : (alert('Please select a doctor first.'), false)">
+                                            <i class="bi bi-check2"></i> Approve
+                                        </button>
+                                        <button type="button" class="btn btn-xs btn-danger"
+                                                style="font-size:11px"
+                                                onclick="if(confirm('Reject {{ patient.name }}?')){document.getElementById('reject-{{ patient.pk }}').submit()}">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                </form>
+                                <form id="reject-{{ patient.pk }}" method="post" action="{% url 'reject_patient' patient.pk %}" class="d-none">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                </form>
+                                {% else %}
+                                <!-- View / Edit / Delete for non-pending -->
+                                <div class="d-flex gap-1">
+                                    <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-xs btn-outline-secondary" style="padding:2px 7px;font-size:11px" title="View"><i class="bi bi-eye"></i></a>
+                                    <a href="{% url 'edit_patient' patient.pk %}" class="btn btn-xs btn-outline-primary" style="padding:2px 7px;font-size:11px" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" action="{% url 'delete_patient' patient.pk %}" class="d-inline" onsubmit="return confirm('Delete {{ patient.name }}?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-xs btn-outline-danger" style="padding:2px 7px;font-size:11px" title="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-5">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>No records found.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+                <small class="text-muted">Showing {{ patients|length }} of {{ total_patients }}</small>
+                {% if page_obj.has_other_pages %}
+                <nav><ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.previous_page_number }}">‹</a></li>
+                    {% endif %}
+                    {% for n in page_obj.paginator.page_range %}
+                        <li class="page-item {% if page_obj.number == n %}active{% endif %}">
+                            <a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ n }}">{{ n }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.next_page_number }}">›</a></li>
+                    {% endif %}
+                </ul></nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT: Side Panels -->
+    <div class="col-lg-4 d-flex flex-column gap-4">
+
+        <!-- Doctor Live Status -->
+        <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
                 <h6 class="mb-0 fw-semibold d-flex align-items-center">
                     <svg class="me-2 text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -49,7 +268,6 @@
                 </span>
             </div>
             <div class="card-body p-0">
-                <!-- Doctor stat mini row -->
                 <div class="d-flex border-bottom">
                     <div class="flex-fill text-center py-2 border-end">
                         <div class="fw-bold" id="dash-total-doctors">{{ total_doctors }}</div>
@@ -64,7 +282,6 @@
                         <div class="text-muted" style="font-size:10px">On Leave</div>
                     </div>
                 </div>
-                <!-- Doctor list -->
                 <div id="live-doctor-list" style="max-height:280px;overflow-y:auto;">
                     {% for doctor in all_doctors %}
                     <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom doctor-row"
@@ -115,11 +332,9 @@
                 </a>
             </div>
         </div>
-    </div>
 
-    <!-- Patient Registration Requests Summary -->
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <!-- Patient Registration Summary -->
+        <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
                 <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
                     <svg class="me-2 text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -160,8 +375,7 @@
                                 d="M12 2v6M12 22v-6M17 5H7M17 19H7M7 5a5 5 0 0 1 10 0v2a5 5 0 0 1-10 0V5zM7 19a5 5 0 0 0 10 0v-2a5 5 0 0 0-10 0v2z">
                             </path>
                         </svg>
-                        {{ pending_patients }} registration request{{ pending_patients|pluralize }} awaiting doctor
-                        assignment.
+                        {{ pending_patients }} registration request{{ pending_patients|pluralize }} awaiting doctor assignment.
                     </p>
                     <a href="#patient-requests-section"
                         class="btn btn-primary btn-sm text-white w-100 d-inline-flex align-items-center justify-content-center">
@@ -185,10 +399,56 @@
                 {% endif %}
             </div>
         </div>
+
+        <!-- Appointment Requests Summary -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
+                    <i class="bi bi-calendar-event text-primary me-2"></i>Appointment Requests
+                </h6>
+                {% if appt_pending > 0 %}
+                <span class="badge bg-warning text-dark">{{ appt_pending }} pending</span>
+                {% else %}
+                <span class="badge bg-success bg-opacity-10 text-success">All clear</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                <div class="d-flex border-bottom">
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold text-warning">{{ appt_pending }}</div>
+                        <div class="text-muted" style="font-size:10px">Pending</div>
+                    </div>
+                    <div class="flex-fill text-center py-2 border-end">
+                        <div class="fw-bold text-success">{{ appt_accepted }}</div>
+                        <div class="text-muted" style="font-size:10px">Accepted</div>
+                    </div>
+                    <div class="flex-fill text-center py-2">
+                        <div class="fw-bold text-danger">{{ appt_rejected }}</div>
+                        <div class="text-muted" style="font-size:10px">Rejected</div>
+                    </div>
+                </div>
+                {% if appt_pending > 0 %}
+                <div class="px-3 py-2 text-center">
+                    <p class="text-muted small mb-2">
+                        <i class="bi bi-hourglass-split me-1 text-warning"></i>
+                        {{ appt_pending }} booking request{{ appt_pending|pluralize }} awaiting approval.
+                    </p>
+                    <a href="#appointment-requests-section"
+                        class="btn btn-warning btn-sm text-dark w-100 d-inline-flex align-items-center justify-content-center fw-bold">
+                        Review Appointments
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3 small">
+                    <i class="bi bi-check-circle-fill text-success fs-4 d-block mb-2"></i>No pending appointments.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════ -->
 <!--  SECTION 1.5: Patient Registration Requests (New Flow) -->
 <!-- ══════════════════════════════════════════════════════ -->
 <div class="mt-4 mb-5" id="patient-requests-section">
@@ -359,8 +619,7 @@
 
         <!-- Pagination for patients -->
         {% if page_obj.has_other_pages %}
-        <div
-            class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
             <small class="text-muted">Showing {{ page_obj|length }} patient registration request(s)</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
@@ -385,6 +644,174 @@
             </nav>
         </div>
         {% endif %}
+    </div>
+</div>
+
+<!--  Appointment Booking Requests (/book/ flow)            -->
+<!-- ══════════════════════════════════════════════════════ -->
+<div class="mt-4 mb-5" id="appointment-requests-section">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-primary d-flex align-items-center">
+            <i class="bi bi-calendar2-check text-warning me-2"></i>Appointment Booking Requests
+            {% if appt_pending > 0 %}
+            <span class="badge bg-warning text-dark ms-2" style="font-size:13px;">{{ appt_pending }} pending</span>
+            {% endif %}
+        </h5>
+    </div>
+
+    <!-- Appointment Stat Cards -->
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #ffc107 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Pending Approval</p>
+                <h3 class="mb-0 fw-bold text-warning">{{ appt_pending }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #198754 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Accepted</p>
+                <h3 class="mb-0 fw-bold text-success">{{ appt_accepted }}</h3>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #dc3545 !important;">
+                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Rejected</p>
+                <h3 class="mb-0 fw-bold text-danger">{{ appt_rejected }}</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Status Filter -->
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+                {% if status_filter and status_filter != 'all' %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+                {% if disease_filter %}<input type="hidden" name="disease" value="{{ disease_filter }}">{% endif %}
+                <div class="col-auto">
+                    <label class="form-label small text-muted mb-1">Filter appointment requests:</label>
+                </div>
+                <div class="col-6 col-md-3">
+                    <select name="appt_status" class="form-select form-select-sm">
+                        <option value="pending"  {% if appt_status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+                        <option value="accepted" {% if appt_status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                        <option value="rejected" {% if appt_status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                        <option value="all"      {% if appt_status_filter == 'all'      %}selected{% endif %}>All</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-warning btn-sm text-dark">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-semibold d-flex align-items-center">
+                <i class="bi bi-calendar-event me-2 text-warning"></i>Appointment Requests
+            </h6>
+            <span class="badge bg-warning bg-opacity-15 text-warning border border-warning">
+                {{ appt_pending }} awaiting approval
+            </span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr class="text-uppercase text-muted font-monospace" style="font-size: 11px; letter-spacing: 0.8px;">
+                        <th class="ps-3 py-3">Patient Name</th>
+                        <th class="py-3">Disease</th>
+                        <th class="py-3">Phone</th>
+                        <th class="py-3">Email</th>
+                        <th class="py-3">Slot Date</th>
+                        <th class="py-3">Time</th>
+                        <th class="text-center py-3">Status</th>
+                        <th class="text-end pe-3 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in all_appointments %}
+                    <tr>
+                        <td class="ps-3 py-3 fw-semibold text-dark">{{ appt.patient_name }}</td>
+                        <td class="py-3">
+                            <span class="badge rounded-pill px-2.5 py-1 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10" style="font-size: 11px;">
+                                {{ appt.disease|default:"—" }}
+                            </span>
+                        </td>
+                        <td class="py-3 text-muted fw-semibold" style="font-size: 12px;">{{ appt.patient_phone }}</td>
+                        <td class="py-3 text-muted">{{ appt.patient_email|default:"—" }}</td>
+                        <td class="py-3 fw-semibold text-dark">{{ appt.slot.date|date:"M d, Y" }}</td>
+                        <td class="py-3 text-muted" style="white-space:nowrap;">
+                            {{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}
+                        </td>
+                        <td class="text-center py-3">
+                            <span class="badge rounded-pill px-2.5 py-1
+                            {% if appt.status == 'accepted' %}bg-success bg-opacity-10 text-success border border-success border-opacity-20
+                            {% elif appt.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20
+                            {% else %}bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20{% endif %}"
+                            style="font-size: 11px; font-weight: 600; letter-spacing: 0.3px;">
+                                {{ appt.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end pe-3 py-3" style="white-space: nowrap;">
+                            <div class="d-inline-flex gap-1.5">
+                                {% if appt.status == 'pending' %}
+                                <form method="post" action="{% url 'accept_appointment' appt.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-success" style="padding:2px 8px;font-size:11px"
+                                            onclick="return confirm('Accept appointment for {{ appt.patient_name }}? An email will be sent.')">
+                                        <i class="bi bi-check2"></i> Accept
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'reject_appointment' appt.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-xs btn-danger" style="padding:2px 8px;font-size:11px"
+                                            onclick="return confirm('Reject appointment for {{ appt.patient_name }}? An email will be sent.')">
+                                        <i class="bi bi-x"></i> Reject
+                                    </button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted" style="font-size:11px">—</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No appointment requests{% if appt_status_filter != 'all' %} with status "{{ appt_status_filter }}"{% endif %}.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if appt_page_obj.has_other_pages %}
+        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+            <small class="text-muted">Showing {{ all_appointments|length }} appointment request(s)</small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if appt_page_obj.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.previous_page_number }}">‹</a></li>
+                    {% endif %}
+                    {% for n in appt_page_obj.paginator.page_range %}
+                        <li class="page-item {% if appt_page_obj.number == n %}active{% endif %}">
+                            <a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ n }}">{{ n }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if appt_page_obj.has_next %}
+                        <li class="page-item"><a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.next_page_number }}">›</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
     </div>
 </div>
 
@@ -444,15 +871,16 @@
     sse.onmessage = function (e) {
         const data = JSON.parse(e.data);
 
-        // ── Patient stat cards ──
         if (data.stats) {
-            // Doctor mini stats in side panel
-            document.getElementById('dash-total-doctors').textContent = data.stats.total_doctors;
-            document.getElementById('dash-available-doctors').textContent = data.stats.available_doctors;
-            document.getElementById('dash-onleave-doctors').textContent = data.stats.on_leave_doctors;
+            const el = (id) => document.getElementById(id);
+            if(el('stat-total'))    el('stat-total').textContent    = data.stats.total_patients;
+            if(el('stat-accepted')) el('stat-accepted').textContent = data.stats.accepted_patients;
+            if(el('stat-rejected')) el('stat-rejected').textContent = data.stats.rejected_patients;
+            if(el('stat-pending'))  el('stat-pending').textContent  = data.stats.pending_patients;
+            if(el('dash-total-doctors'))    el('dash-total-doctors').textContent    = data.stats.total_doctors;
+            if(el('dash-available-doctors'))el('dash-available-doctors').textContent = data.stats.available_doctors;
+            if(el('dash-onleave-doctors'))  el('dash-onleave-doctors').textContent  = data.stats.on_leave_doctors;
         }
-
-        // ── Doctor live status dots and slots left in side panel ──
         if (data.doctors) {
             data.doctors.forEach(doc => {
                 const row = document.querySelector(`.doctor-row[data-doctor-id="${doc.id}"]`);

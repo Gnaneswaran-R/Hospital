@@ -9,24 +9,64 @@
         <div class="card shadow-sm border-0 p-4">
             <div class="mb-4">
                 <h1 class="h3">New Patient Registration</h1>
-                <p class="text-muted">Complete the form below to submit a new patient request. A doctor will be automatically assigned based on your condition.</p>
+                <p class="text-muted">Fill in your details and describe your condition. Our admin team will assign the right doctor and get back to you.</p>
             </div>
             <form method="post" novalidate>
                 {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger py-2 small">{{ form.non_field_errors }}</div>
+                {% endif %}
                 <div class="row gx-3 gy-3">
-                    <div class="col-md-6">{{ form.name.label_tag }}{{ form.name }}</div>
-                    <div class="col-md-3">{{ form.age.label_tag }}{{ form.age }}</div>
-                    <div class="col-md-3">{{ form.gender.label_tag }}{{ form.gender }}</div>
-                    <div class="col-md-6">{{ form.phone.label_tag }}{{ form.phone }}</div>
-                    <div class="col-md-6">{{ form.email.label_tag }}{{ form.email }}</div>
-                    <div class="col-md-12">{{ form.address.label_tag }}{{ form.address }}</div>
                     <div class="col-md-6">
-                        {{ form.disease.label_tag }}{{ form.disease }}
-                        <div class="form-text" id="doctor-hint"></div>
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
                     </div>
-                    <div class="col-md-6">{{ form.preferred_date.label_tag }}{{ form.preferred_date }}</div>
-                    <div class="col-md-6">{{ form.preferred_time.label_tag }}{{ form.preferred_time }}</div>
-                    <div class="col-md-12">{{ form.notes.label_tag }}{{ form.notes }}</div>
+                    <div class="col-md-3">
+                        {{ form.age.label_tag }}
+                        {{ form.age }}
+                        {% if form.age.errors %}<div class="text-danger small mt-1">{{ form.age.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.gender.label_tag }}
+                        {{ form.gender }}
+                        {% if form.gender.errors %}<div class="text-danger small mt-1">{{ form.gender.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.phone.label_tag }}
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.email.label_tag }}
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        {{ form.address.label_tag }}
+                        {{ form.address }}
+                        {% if form.address.errors %}<div class="text-danger small mt-1">{{ form.address.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.disease.label_tag }}
+                        {{ form.disease }}
+                        {% if form.disease.errors %}<div class="text-danger small mt-1">{{ form.disease.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.preferred_date.label_tag }}
+                        {{ form.preferred_date }}
+                        {% if form.preferred_date.errors %}<div class="text-danger small mt-1">{{ form.preferred_date.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {{ form.preferred_time.label_tag }}
+                        {{ form.preferred_time }}
+                        {% if form.preferred_time.errors %}<div class="text-danger small mt-1">{{ form.preferred_time.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        {{ form.notes.label_tag }}
+                        {{ form.notes }}
+                        {% if form.notes.errors %}<div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>{% endif %}
+                    </div>
                 </div>
                 <div class="mt-4 text-end">
                     <button type="submit" class="btn btn-primary btn-lg">Submit Patient Request</button>
@@ -35,92 +75,27 @@
         </div>
     </div>
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 p-4 mb-4">
-            <h2 class="h5 mb-3">How it works</h2>
-            <p class="text-muted small">Once submitted, your registration is automatically routed to the right doctor based on your condition. The doctor will review and accept or reject your request.</p>
-            <ul class="list-unstyled text-muted small">
-                <li class="mb-2"><i class="bi bi-1-circle-fill text-primary me-2"></i>Fill in your details and select your disease</li>
-                <li class="mb-2"><i class="bi bi-2-circle-fill text-primary me-2"></i>A specialist doctor is auto-assigned</li>
-                <li class="mb-2"><i class="bi bi-3-circle-fill text-primary me-2"></i>Doctor reviews and accepts or rejects</li>
-                <li class="mb-2"><i class="bi bi-4-circle-fill text-primary me-2"></i>You receive an email notification</li>
-            </ul>
-        </div>
-
-        <!-- Disease → Doctor mapping hint card -->
         <div class="card shadow-sm border-0 p-4">
-            <h2 class="h5 mb-3"><i class="bi bi-person-check-fill text-success me-2"></i>Specialist Assignment</h2>
-            <p class="text-muted small mb-3">Select a disease above to see which specialist will handle your case.</p>
-            <div id="assigned-doctor-card" class="d-none">
-                <div class="d-flex align-items-center gap-3 p-3 bg-success bg-opacity-10 rounded-3">
-                    <div class="rounded-circle bg-success bg-opacity-25 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                        <i class="bi bi-person-fill text-success fs-5"></i>
-                    </div>
-                    <div>
-                        <p class="mb-0 fw-semibold small" id="assigned-doctor-name">—</p>
-                        <small class="text-muted" id="assigned-doctor-spec">—</small>
-                    </div>
-                </div>
-            </div>
-            <div id="no-doctor-card" class="text-muted small">
-                <i class="bi bi-info-circle me-1"></i> No specialist selected yet.
+            <h2 class="h5 mb-3">How it works</h2>
+            <ul class="list-unstyled text-muted small">
+                <li class="mb-3 d-flex gap-2">
+                    <i class="bi bi-1-circle-fill text-primary fs-5 flex-shrink-0"></i>
+                    <span>Fill in your personal details and select your condition or disease.</span>
+                </li>
+                <li class="mb-3 d-flex gap-2">
+                    <i class="bi bi-2-circle-fill text-primary fs-5 flex-shrink-0"></i>
+                    <span>Our admin reviews your request and assigns the most suitable available doctor.</span>
+                </li>
+                <li class="mb-3 d-flex gap-2">
+                    <i class="bi bi-3-circle-fill text-primary fs-5 flex-shrink-0"></i>
+                    <span>You will receive an email notification once your request is approved or rejected.</span>
+                </li>
+            </ul>
+            <div class="alert alert-info py-2 small mb-0">
+                <i class="bi bi-info-circle me-1"></i>
+                <strong>Note:</strong> You do not need to select a doctor. Our team will match you with the right specialist based on your condition.
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    // Disease → Speciality mapping (mirrors server-side DISEASE_SPECIALITY_MAP)
-    const DISEASE_MAP = {
-        'Diabetes':         'Endocrinologist',
-        'Hypertension':     'Cardiologist',
-        'Asthma':           'Pulmonologist',
-        'Heart Disease':    'Cardiologist',
-        'Tuberculosis':     'Pulmonologist',
-        'Cancer':           'Cancer Specialist',
-        'Lung Cancer':      'Cancer Specialist',
-        'Breast Cancer':    'Cancer Specialist',
-        'Kidney Disease':   'Nephrologist',
-        'Liver Disease':    'Gastroenterologist',
-        'Arthritis':        'Orthopedic Surgeon',
-        'Thyroid Disorder': 'Endocrinologist',
-        'Anemia':           'General Physician',
-        'Dengue':           'General Physician',
-        'Malaria':          'General Physician',
-        'Typhoid':          'General Physician',
-        'Pneumonia':        'Pulmonologist',
-        'Migraine':         'Neurologist',
-        'Epilepsy':         'Neurologist',
-        'Depression':       'Psychiatrist',
-        'Other':            'General Physician',
-    };
-
-    const diseaseSelect = document.getElementById('id_disease');
-    const assignedCard  = document.getElementById('assigned-doctor-card');
-    const noDoctorCard  = document.getElementById('no-doctor-card');
-    const nameEl        = document.getElementById('assigned-doctor-name');
-    const specEl        = document.getElementById('assigned-doctor-spec');
-    const hintEl        = document.getElementById('doctor-hint');
-
-    function updateHint() {
-        const disease = diseaseSelect.value;
-        if (!disease) {
-            assignedCard.classList.add('d-none');
-            noDoctorCard.classList.remove('d-none');
-            hintEl.textContent = '';
-            return;
-        }
-        const spec = DISEASE_MAP[disease] || 'General Physician';
-        specEl.textContent  = spec;
-        nameEl.textContent  = 'Assigned: ' + spec;
-        hintEl.textContent  = '→ Will be assigned to a ' + spec;
-        hintEl.className    = 'form-text text-success';
-        assignedCard.classList.remove('d-none');
-        noDoctorCard.classList.add('d-none');
-    }
-
-    diseaseSelect.addEventListener('change', updateHint);
-    updateHint(); // run on page load in case of form re-render
-</script>
 {% endblock %}
