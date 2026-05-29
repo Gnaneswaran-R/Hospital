@@ -6,10 +6,10 @@
 <!-- ── Page Header ── -->
 <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
     <div>
-        <h1 class="h3 mb-1 fw-bold">Admin Dashboard</h1>
+        <h1 class="h3 mb-1 fw-bold text-dark">Admin Dashboard</h1>
         <p class="text-muted mb-0">
             <span class="badge bg-success bg-opacity-10 text-success me-1 d-inline-flex align-items-center">
-                <svg class="me-1" width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                <svg class="me-1 animate-pulse" width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
                     <circle cx="4" cy="4" r="3.5"></circle>
                 </svg>Live
             </span>
@@ -17,275 +17,53 @@
         </p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center">
-            <svg class="me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1 border-2 fw-semibold px-3 py-2 rounded-3">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
-            </svg>Manage Doctors
+            </svg>
+            Manage Doctors
         </a>
     </div>
 </div>
 
-<!-- ── Stat Cards ── -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #0d6efd !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                    <i class="bi bi-people-fill text-primary"></i>
-                </div>
-                <div>
-                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Total Patients</p>
-                    <h3 class="mb-0 fw-bold" id="stat-total">{{ total_patients }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #198754 !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                    <i class="bi bi-check-circle-fill text-success"></i>
-                </div>
-                <div>
-                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Accepted</p>
-                    <h3 class="mb-0 fw-bold text-success" id="stat-accepted">{{ accepted_patients }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #dc3545 !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                    <i class="bi bi-x-circle-fill text-danger"></i>
-                </div>
-                <div>
-                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Rejected</p>
-                    <h3 class="mb-0 fw-bold text-danger" id="stat-rejected">{{ rejected_patients }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm p-3 h-100" style="border-left:4px solid #6c757d !important;">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:44px;height:44px">
-                    <i class="bi bi-hourglass-split text-secondary"></i>
-                </div>
-                <div>
-                    <p class="text-muted small mb-0 text-uppercase" style="font-size:11px">Pending</p>
-                    <h3 class="mb-0 fw-bold text-secondary" id="stat-pending">{{ pending_patients }}</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ── Main Grid: Patients Table + Side Panels ── -->
-<div class="row g-4">
-
-    <!-- LEFT: Patients Table -->
-    <div class="col-lg-8">
-
-        <!-- Filters -->
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body py-3">
-                <form method="get" class="row g-2 align-items-end">
-                    <div class="col-12 col-md-4">
-                        <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="🔍 Search by name">
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <select name="status" class="form-select form-select-sm">
-                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
-                            <option value="pending"  {% if status_filter == 'pending'  %}selected{% endif %}>Pending</option>
-                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
-                            <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-                        </select>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <select name="disease" class="form-select form-select-sm">
-                            <option value="">All Diseases</option>
-                            <option value="Diabetes" {% if disease_filter == 'Diabetes' %}selected{% endif %}>Diabetes</option>
-                            <option value="Hypertension" {% if disease_filter == 'Hypertension' %}selected{% endif %}>Hypertension</option>
-                            <option value="Asthma" {% if disease_filter == 'Asthma' %}selected{% endif %}>Asthma</option>
-                            <option value="Heart Disease" {% if disease_filter == 'Heart Disease' %}selected{% endif %}>Heart Disease</option>
-                            <option value="Tuberculosis" {% if disease_filter == 'Tuberculosis' %}selected{% endif %}>Tuberculosis</option>
-                            <option value="Cancer" {% if disease_filter == 'Cancer' %}selected{% endif %}>Cancer</option>
-                            <option value="Kidney Disease" {% if disease_filter == 'Kidney Disease' %}selected{% endif %}>Kidney Disease</option>
-                            <option value="Liver Disease" {% if disease_filter == 'Liver Disease' %}selected{% endif %}>Liver Disease</option>
-                            <option value="Arthritis" {% if disease_filter == 'Arthritis' %}selected{% endif %}>Arthritis</option>
-                            <option value="Migraine" {% if disease_filter == 'Migraine' %}selected{% endif %}>Migraine</option>
-                            <option value="Depression" {% if disease_filter == 'Depression' %}selected{% endif %}>Depression</option>
-                            <option value="Other" {% if disease_filter == 'Other' %}selected{% endif %}>Other</option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-2 d-grid">
-                        <button type="submit" class="btn btn-primary btn-sm">Apply</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Patients Table -->
-        <div class="card border-0 shadow-sm">
+<!-- ── Side Panels: Doctor Live Status + Today's Appointments (Side-by-Side) ── -->
+<div class="row g-4 mb-5">
+    <!-- Doctor Live Status -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
             <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold"><i class="bi bi-table me-2 text-primary"></i>Patient Registrations</h6>
-                <span class="badge bg-primary bg-opacity-10 text-primary">{{ total_patients }} total</span>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 small">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Name</th>
-                            <th>Disease</th>
-                            <th>Assigned Doctor</th>
-                            <th>Phone</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for patient in patients %}
-                        <tr>
-                            <td>
-                                <a href="{% url 'patient_detail' patient.pk %}" class="text-decoration-none fw-semibold">{{ patient.name }}</a>
-                                <div class="text-muted" style="font-size:11px">{{ patient.email|default:"—" }}</div>
-                            </td>
-                            <td>{{ patient.disease }}</td>
-                            <td>
-                                {% if patient.assigned_doctor %}
-                                    <span class="small">Dr. {{ patient.assigned_doctor.name }}</span>
-                                    <div class="text-muted" style="font-size:11px">{{ patient.assigned_doctor.speciality }}</div>
-                                {% else %}
-                                    <span class="text-muted small fst-italic">Not assigned</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ patient.phone }}</td>
-                            <td>
-                                <span class="badge rounded-pill
-                                    {% if patient.status == 'accepted' %}bg-success
-                                    {% elif patient.status == 'rejected' %}bg-danger
-                                    {% else %}bg-warning text-dark{% endif %}">
-                                    {{ patient.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if patient.status == 'pending' %}
-                                <!-- Accept with doctor selection -->
-                                <form method="post" action="{% url 'accept_patient' patient.pk %}" class="d-flex flex-column gap-1" style="min-width:180px">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                    <select name="doctor_id" class="form-select form-select-sm" required>
-                                        <option value="">— Assign doctor —</option>
-                                        {% for doc in available_doctors_list %}
-                                        <option value="{{ doc.pk }}">Dr. {{ doc.name }} ({{ doc.speciality }})</option>
-                                        {% empty %}
-                                        <option disabled>No available doctors</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="d-flex gap-1">
-                                        <button type="submit" class="btn btn-xs btn-success flex-fill"
-                                                style="font-size:11px"
-                                                onclick="return this.form.doctor_id.value ? confirm('Approve {{ patient.name }} and assign selected doctor?') : (alert('Please select a doctor first.'), false)">
-                                            <i class="bi bi-check2"></i> Approve
-                                        </button>
-                                        <button type="button" class="btn btn-xs btn-danger"
-                                                style="font-size:11px"
-                                                onclick="if(confirm('Reject {{ patient.name }}?')){document.getElementById('reject-{{ patient.pk }}').submit()}">
-                                            <i class="bi bi-x"></i>
-                                        </button>
-                                    </div>
-                                </form>
-                                <form id="reject-{{ patient.pk }}" method="post" action="{% url 'reject_patient' patient.pk %}" class="d-none">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                </form>
-                                {% else %}
-                                <!-- View / Edit / Delete for non-pending -->
-                                <div class="d-flex gap-1">
-                                    <a href="{% url 'patient_detail' patient.pk %}" class="btn btn-xs btn-outline-secondary" style="padding:2px 7px;font-size:11px" title="View"><i class="bi bi-eye"></i></a>
-                                    <a href="{% url 'edit_patient' patient.pk %}" class="btn btn-xs btn-outline-primary" style="padding:2px 7px;font-size:11px" title="Edit"><i class="bi bi-pencil"></i></a>
-                                    <form method="post" action="{% url 'delete_patient' patient.pk %}" class="d-inline" onsubmit="return confirm('Delete {{ patient.name }}?')">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-xs btn-outline-danger" style="padding:2px 7px;font-size:11px" title="Delete"><i class="bi bi-trash"></i></button>
-                                    </form>
-                                </div>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-5">
-                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>No records found.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <!-- Pagination -->
-            <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-                <small class="text-muted">Showing {{ patients|length }} of {{ total_patients }}</small>
-                {% if page_obj.has_other_pages %}
-                <nav><ul class="pagination pagination-sm mb-0">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.previous_page_number }}">‹</a></li>
-                    {% endif %}
-                    {% for n in page_obj.paginator.page_range %}
-                        <li class="page-item {% if page_obj.number == n %}active{% endif %}">
-                            <a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ n }}">{{ n }}</a>
-                        </li>
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?{% if current_query %}{{ current_query }}&{% endif %}page={{ page_obj.next_page_number }}">›</a></li>
-                    {% endif %}
-                </ul></nav>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- RIGHT: Side Panels -->
-    <div class="col-lg-4 d-flex flex-column gap-4">
-
-        <!-- Doctor Live Status -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold d-flex align-items-center">
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
                     <svg class="me-2 text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
                     </svg>Doctor Status
                 </h6>
-                <span class="badge bg-success bg-opacity-10 text-success d-inline-flex align-items-center"
-                    style="font-size:10px">
+                <span class="badge bg-success bg-opacity-10 text-success d-inline-flex align-items-center" style="font-size:10px">
                     <svg class="me-1" width="6" height="6" viewBox="0 0 8 8" fill="currentColor">
                         <circle cx="4" cy="4" r="3.5"></circle>
                     </svg>Live
                 </span>
             </div>
             <div class="card-body p-0">
-                <div class="d-flex border-bottom">
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold" id="dash-total-doctors">{{ total_doctors }}</div>
-                        <div class="text-muted" style="font-size:10px">Total</div>
+                <div class="d-flex border-bottom bg-light bg-opacity-30">
+                    <div class="flex-fill text-center py-3 border-end">
+                        <div class="fw-bold fs-5 text-dark" id="dash-total-doctors">{{ total_doctors }}</div>
+                        <div class="text-muted" style="font-size:11px">Total Doctors</div>
                     </div>
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold text-success" id="dash-available-doctors">{{ available_doctors }}</div>
-                        <div class="text-muted" style="font-size:10px">Available</div>
+                    <div class="flex-fill text-center py-3 border-end">
+                        <div class="fw-bold fs-5 text-success" id="dash-available-doctors">{{ available_doctors }}</div>
+                        <div class="text-muted" style="font-size:11px">Available</div>
                     </div>
-                    <div class="flex-fill text-center py-2">
-                        <div class="fw-bold text-warning" id="dash-onleave-doctors">{{ on_leave_doctors }}</div>
-                        <div class="text-muted" style="font-size:10px">On Leave</div>
+                    <div class="flex-fill text-center py-3">
+                        <div class="fw-bold fs-5 text-warning" id="dash-onleave-doctors">{{ on_leave_doctors }}</div>
+                        <div class="text-muted" style="font-size:11px">On Leave</div>
                     </div>
                 </div>
-                <div id="live-doctor-list" style="max-height:280px;overflow-y:auto;">
+                <div id="live-doctor-list" style="max-height:280px; overflow-y:auto;">
                     {% for doctor in all_doctors %}
-                    <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom doctor-row"
-                        data-doctor-id="{{ doctor.pk }}">
+                    <div class="d-flex align-items-center gap-3 px-3 py-2.5 border-bottom doctor-row hover-bg" data-doctor-id="{{ doctor.pk }}">
                         <div class="flex-shrink-0">
                             {% if doctor.availability == 'available' %}
                             <span class="text-success fs-6">🟢</span>
@@ -296,13 +74,10 @@
                             {% endif %}
                         </div>
                         <div class="flex-grow-1 min-w-0">
-                            <p class="mb-0 fw-semibold small text-truncate">Dr. {{ doctor.name }}</p>
-                            <p class="mb-0 text-muted" style="font-size:11px">{{ doctor.speciality }} · {{
-                                doctor.department }}</p>
+                            <p class="mb-0 fw-semibold small text-dark text-truncate">Dr. {{ doctor.name }}</p>
+                            <p class="mb-0 text-muted" style="font-size:11px">{{ doctor.speciality }} · {{ doctor.department }}</p>
                         </div>
-                        <span
-                            class="badge flex-shrink-0 doc-slots-left {% if doctor.availability == 'available' %}{% if doctor.open_slots > 0 %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}{% else %}d-none{% endif %}"
-                            style="font-size:10px">
+                        <span class="badge flex-shrink-0 doc-slots-left {% if doctor.availability == 'available' %}{% if doctor.open_slots > 0 %}bg-success bg-opacity-10 text-success{% else %}bg-danger bg-opacity-10 text-danger{% endif %}{% else %}d-none{% endif %}" style="font-size:10px">
                             {% if doctor.availability == 'available' %}
                             {% if doctor.open_slots > 0 %}
                             {{ doctor.open_slots }} slots left
@@ -311,168 +86,92 @@
                             {% endif %}
                             {% endif %}
                         </span>
-                        <a href="{% url 'doctor_availability' doctor.pk %}"
-                            class="btn btn-xs btn-outline-secondary flex-shrink-0"
-                            style="padding:2px 6px;font-size:10px">Manage</a>
+                        <a href="{% url 'doctor_availability' doctor.pk %}" class="btn btn-xs btn-outline-secondary flex-shrink-0 fw-semibold" style="padding:3px 8px; font-size:10px; border-radius: 6px;">Manage</a>
                     </div>
                     {% empty %}
-                    <div class="text-center text-muted py-4 small">No doctors added yet.</div>
+                    <div class="text-center text-muted py-5 small">No doctors added yet.</div>
                     {% endfor %}
                 </div>
             </div>
-            <div class="card-footer bg-white border-0 py-2">
-                <a href="{% url 'doctors_dashboard' %}"
-                    class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center">
+            <div class="card-footer bg-white border-0 py-3 border-top">
+                <a href="{% url 'doctors_dashboard' %}" class="btn btn-outline-primary btn-sm w-100 d-inline-flex align-items-center justify-content-center gap-1 fw-bold rounded-3 py-2">
                     View All Doctors
-                    <svg class="ms-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                         <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
                 </a>
             </div>
         </div>
+    </div>
 
-        <!-- Patient Registration Summary -->
-        <div class="card border-0 shadow-sm">
+    <!-- Today's Appointments -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
             <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
-                    <svg class="me-2 text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>Patient Registrations
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-calendar-check-fill me-2 text-primary"></i>Today's Appointments
                 </h6>
-                {% if pending_patients > 0 %}
-                <span class="badge bg-primary text-white">{{ pending_patients }} pending</span>
-                {% else %}
-                <span class="badge bg-success bg-opacity-10 text-success">All clear</span>
-                {% endif %}
+                <span class="badge bg-primary bg-opacity-10 text-primary px-2.5 py-1.5 fw-bold" style="border-radius: 30px;">
+                    {{ todays_appointments|length }} today
+                </span>
             </div>
             <div class="card-body p-0">
-                <div class="d-flex border-bottom">
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold text-primary">{{ pending_patients }}</div>
-                        <div class="text-muted" style="font-size:10px">Pending</div>
+                <div style="max-height:365px; overflow-y:auto;">
+                    {% for appt in todays_appointments %}
+                    <div class="px-3 py-2.5 border-bottom hover-bg">
+                        <div class="d-flex align-items-center justify-content-between gap-3">
+                            <div class="min-w-0">
+                                <p class="mb-0 fw-bold text-dark small text-truncate">{{ appt.patient_name }}</p>
+                                <p class="mb-0 text-muted" style="font-size:11px">
+                                    Dr. {{ appt.doctor.name }} ·
+                                    <span class="text-primary fw-medium">{{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}</span>
+                                </p>
+                            </div>
+                            <span class="badge rounded-pill flex-shrink-0 px-2.5 py-1
+                                {% if appt.status == 'accepted' or appt.status == 'confirmed' %}bg-success bg-opacity-10 text-success border border-success border-opacity-10
+                                {% elif appt.status == 'cancelled' or appt.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10
+                                {% else %}bg-secondary bg-opacity-10 text-secondary{% endif %}" style="font-size:10px; font-weight: 600;">
+                                {{ appt.get_status_display }}
+                            </span>
+                        </div>
                     </div>
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold text-success">{{ accepted_patients }}</div>
-                        <div class="text-muted" style="font-size:10px">Accepted</div>
+                    {% empty %}
+                    <div class="text-center text-muted py-5 my-4 small">
+                        <i class="bi bi-calendar-x d-block fs-3 mb-2 text-muted text-opacity-60"></i>
+                        No appointments scheduled for today.
                     </div>
-                    <div class="flex-fill text-center py-2">
-                        <div class="fw-bold text-danger">{{ rejected_patients }}</div>
-                        <div class="text-muted" style="font-size:10px">Rejected</div>
-                    </div>
+                    {% endfor %}
                 </div>
-                {% if pending_patients > 0 %}
-                <div class="px-3 py-2 text-center">
-                    <p class="text-muted small mb-2 d-flex align-items-center justify-content-center">
-                        <svg class="me-1 text-primary" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path
-                                d="M12 2v6M12 22v-6M17 5H7M17 19H7M7 5a5 5 0 0 1 10 0v2a5 5 0 0 1-10 0V5zM7 19a5 5 0 0 0 10 0v-2a5 5 0 0 0-10 0v2z">
-                            </path>
-                        </svg>
-                        {{ pending_patients }} registration request{{ pending_patients|pluralize }} awaiting doctor assignment.
-                    </p>
-                    <a href="#patient-requests-section"
-                        class="btn btn-primary btn-sm text-white w-100 d-inline-flex align-items-center justify-content-center">
-                        <svg class="me-1" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="8 12 12 16 16 12"></polyline>
-                            <line x1="12" y1="8" x2="12" y2="16"></line>
-                        </svg>Review Registrations
-                    </a>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-3 small">
-                    <svg class="text-success d-block mx-auto mb-2" width="36" height="36" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                    </svg>No pending registration requests.
-                </div>
-                {% endif %}
             </div>
         </div>
-
-        <!-- Appointment Requests Summary -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-                <h6 class="mb-0 fw-semibold text-primary d-flex align-items-center">
-                    <i class="bi bi-calendar-event text-primary me-2"></i>Appointment Requests
-                </h6>
-                {% if appt_pending > 0 %}
-                <span class="badge bg-warning text-dark">{{ appt_pending }} pending</span>
-                {% else %}
-                <span class="badge bg-success bg-opacity-10 text-success">All clear</span>
-                {% endif %}
-            </div>
-            <div class="card-body p-0">
-                <div class="d-flex border-bottom">
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold text-warning">{{ appt_pending }}</div>
-                        <div class="text-muted" style="font-size:10px">Pending</div>
-                    </div>
-                    <div class="flex-fill text-center py-2 border-end">
-                        <div class="fw-bold text-success">{{ appt_accepted }}</div>
-                        <div class="text-muted" style="font-size:10px">Accepted</div>
-                    </div>
-                    <div class="flex-fill text-center py-2">
-                        <div class="fw-bold text-danger">{{ appt_rejected }}</div>
-                        <div class="text-muted" style="font-size:10px">Rejected</div>
-                    </div>
-                </div>
-                {% if appt_pending > 0 %}
-                <div class="px-3 py-2 text-center">
-                    <p class="text-muted small mb-2">
-                        <i class="bi bi-hourglass-split me-1 text-warning"></i>
-                        {{ appt_pending }} booking request{{ appt_pending|pluralize }} awaiting approval.
-                    </p>
-                    <a href="#appointment-requests-section"
-                        class="btn btn-warning btn-sm text-dark w-100 d-inline-flex align-items-center justify-content-center fw-bold">
-                        Review Appointments
-                    </a>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-3 small">
-                    <i class="bi bi-check-circle-fill text-success fs-4 d-block mb-2"></i>No pending appointments.
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
     </div>
 </div>
 
-<!--  SECTION 1.5: Patient Registration Requests (New Flow) -->
-<!-- ══════════════════════════════════════════════════════ -->
+<!-- ── SECTION 1.5: Patient Registration Requests (Full-Width Card) ── -->
 <div class="mt-4 mb-5" id="patient-requests-section">
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-primary d-flex align-items-center">
+        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
             <svg class="me-2 text-primary" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                 <circle cx="9" cy="7" r="4"></circle>
                 <line x1="19" y1="8" x2="19" y2="14"></line>
                 <line x1="22" y1="11" x2="16" y2="11"></line>
-            </svg>Patient Registration Requests
+            </svg>
+            Patient Registration Requests
             {% if pending_patients > 0 %}
-            <span class="badge bg-primary ms-2">{{ pending_patients }} pending</span>
+            <span class="badge bg-primary ms-2" style="font-size:12px;">{{ pending_patients }} pending</span>
             {% endif %}
         </h5>
     </div>
 
     <!-- Patients Table -->
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-            <h6 class="mb-0 fw-semibold d-flex align-items-center">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 py-3.5 d-flex align-items-center justify-content-between border-bottom">
+            <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
                 <svg class="me-2 text-primary" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -480,61 +179,55 @@
                 </svg>Pending Registrations
             </h6>
             <span class="badge"
-                style="background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.25); font-weight: 500; font-size: 11.5px; padding: 6px 12px; border-radius: 30px;">
-                {{ pending_patients }} awaiting doctor/slot assignment
+                style="background-color: rgba(13, 110, 253, 0.08); color: #0d6efd; border: 1px solid rgba(13, 110, 253, 0.15); font-weight: 600; font-size: 11.5px; padding: 6px 12px; border-radius: 30px;">
+                {{ pending_patients }} awaiting doctor assignment
             </span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
-                    <tr class="text-uppercase text-muted font-monospace"
-                        style="font-size: 11px; letter-spacing: 0.8px;">
-                        <th class="ps-3 py-3">Patient Name</th>
+                    <tr class="text-uppercase text-muted font-monospace" style="font-size: 11px; letter-spacing: 0.8px;">
+                        <th class="ps-4 py-3">Patient Name</th>
                         <th class="py-3">Age / Gender</th>
                         <th class="py-3">Condition</th>
                         <th class="py-3">Phone</th>
                         <th class="py-3">Preferred Date</th>
-                        <th class="py-3">Choose Doctor</th>
+                        <th class="py-3" style="min-width: 250px;">Choose Doctor</th>
                         <th class="text-center py-3">Status</th>
-                        <th class="text-end pe-3 py-3">Actions</th>
+                        <th class="text-end pe-4 py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for patient in page_obj %}
                     <tr>
-                        <td class="ps-3 py-3">
-                            <p class="mb-0 fw-semibold text-dark">{{ patient.name }}</p>
+                        <td class="ps-4 py-3.5">
+                            <p class="mb-0 fw-bold text-dark small">{{ patient.name }}</p>
                             <div class="text-muted" style="font-size:11px">{{ patient.email|default:"—" }}</div>
                         </td>
-                        <td class="py-3">
-                            <span class="fw-semibold text-dark">{{ patient.age|default:"—" }}</span> <span
-                                class="text-muted small">&middot; {{ patient.get_gender_display|default:"—" }}</span>
+                        <td class="py-3.5">
+                            <span class="fw-semibold text-dark small">{{ patient.age|default:"—" }}</span> 
+                            <span class="text-muted small">&middot; {{ patient.get_gender_display|default:"—" }}</span>
                         </td>
-                        <td class="py-3">
-                            <span
-                                class="badge rounded-pill px-2.5 py-1 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10"
-                                style="font-size: 11px;">{{ patient.disease|default:"—" }}</span>
+                        <td class="py-3.5">
+                            <span class="badge rounded-pill px-2.5 py-1.5 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10" style="font-size: 11px;">
+                                {{ patient.disease|default:"—" }}
+                            </span>
                         </td>
-                        <td class="py-3 text-muted fw-semibold" style="font-size: 12px;">{{ patient.phone }}</td>
-                        <td class="py-3">
-                            <div class="fw-semibold text-dark" style="font-size: 12.5px;">{{ patient.preferred_date|date:"M d, Y"|default:"Any Date" }}</div>
+                        <td class="py-3.5 text-muted fw-semibold small" style="font-size: 12px;">{{ patient.phone }}</td>
+                        <td class="py-3.5">
+                            <div class="fw-semibold text-dark small">{{ patient.preferred_date|date:"M d, Y"|default:"Any Date" }}</div>
                             {% if patient.preferred_time %}
-                            <div class="text-primary small fw-semibold mt-1 d-inline-flex align-items-center gap-1"
-                                style="font-size:11px">
+                            <div class="text-primary small fw-semibold mt-1 d-inline-flex align-items-center gap-1" style="font-size:11px">
                                 <i class="bi bi-clock-history"></i> {{ patient.preferred_time }}
                             </div>
                             {% endif %}
                         </td>
-                        <td class="py-3">
+                        <td class="py-3.5">
                             {% if patient.status == 'pending' %}
-                            <form method="post" action="{% url 'accept_patient' patient.pk %}"
-                                class="d-flex align-items-center" style="max-width: 280px; margin: 0;">
+                            <form method="post" action="{% url 'accept_patient' patient.pk %}" class="d-flex align-items-center" style="margin: 0;">
                                 {% csrf_token %}
                                 <div class="input-group input-group-sm">
-                                    <select name="doctor_id" class="form-select doctor-select"
-                                        style="font-size: 12px; border-top-left-radius: 6px; border-bottom-left-radius: 6px;"
-                                        data-patient-id="{{ patient.pk }}" required{% if not patient.related_doctors %}
-                                        disabled{% endif %}>
+                                    <select name="doctor_id" class="form-select doctor-select fw-semibold" style="font-size: 11.5px; border-top-left-radius: 8px; border-bottom-left-radius: 8px;" required{% if not patient.related_doctors %} disabled{% endif %}>
                                         {% if patient.related_doctors %}
                                         <option value="">Select Doctor...</option>
                                         {% for doc in patient.related_doctors %}
@@ -544,10 +237,7 @@
                                         <option value="">No doctor available</option>
                                         {% endif %}
                                     </select>
-                                    <button type="submit"
-                                        class="btn btn-success d-inline-flex align-items-center fw-semibold"
-                                        style="font-size: 11px; border-top-right-radius: 6px; border-bottom-right-radius: 6px;"
-                                        {% if not patient.related_doctors %} disabled{% endif %}>
+                                    <button type="submit" class="btn btn-success d-inline-flex align-items-center fw-bold px-3" style="font-size: 11px; border-top-right-radius: 8px; border-bottom-right-radius: 8px;" {% if not patient.related_doctors %} disabled{% endif %}>
                                         <i class="bi bi-check-lg me-1"></i>Assign
                                     </button>
                                 </div>
@@ -561,9 +251,8 @@
                             <span class="text-muted small">—</span>
                             {% endif %}
                         </td>
-                        <td class="text-center py-3">
-                            <span
-                                class="badge rounded-pill px-2.5 py-1
+                        <td class="text-center py-3.5">
+                            <span class="badge rounded-pill px-2.5 py-1.5
                                 {% if patient.status == 'accepted' %}bg-success bg-opacity-10 text-success border border-success border-opacity-20
                                 {% elif patient.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20
                                 {% else %}bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20{% endif %}"
@@ -571,27 +260,19 @@
                                 {{ patient.get_status_display }}
                             </span>
                         </td>
-                        <td class="text-end pe-3 py-3" style="white-space: nowrap;">
+                        <td class="text-end pe-4 py-3.5" style="white-space: nowrap;">
                             <div class="d-inline-flex gap-1.5">
                                 {% if patient.status == 'pending' %}
                                 <form method="post" action="{% url 'reject_patient' patient.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit"
-                                        class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center"
-                                        style="padding: 4px 8px; font-size: 11px; border-radius: 6px;"
-                                        onclick="return confirm('Reject registration for {{ patient.name }}?')"
-                                        title="Reject">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center justify-content-center border-2 fw-bold" style="padding: 5px 10px; font-size: 11px; border-radius: 8px;" onclick="return confirm('Reject registration for {{ patient.name }}?')" title="Reject">
                                         <i class="bi bi-x-circle me-1"></i>Reject
                                     </button>
                                 </form>
                                 {% endif %}
                                 <form method="post" action="{% url 'delete_patient' patient.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit"
-                                        class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center"
-                                        style="padding: 4px 8px; font-size: 11px; border-radius: 6px;"
-                                        onclick="return confirm('Delete patient record for {{ patient.name }}?')"
-                                        title="Delete">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center border-2 fw-bold" style="padding: 5px 10px; font-size: 11px; border-radius: 8px;" onclick="return confirm('Delete patient record for {{ patient.name }}?')" title="Delete">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
@@ -601,9 +282,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="8" class="text-center text-muted py-5">
-                            <svg class="text-muted d-block mx-auto mb-2" width="48" height="48" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                stroke-linejoin="round">
+                            <svg class="text-muted d-block mx-auto mb-2 text-opacity-40" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
                                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
@@ -619,25 +298,23 @@
 
         <!-- Pagination for patients -->
         {% if page_obj.has_other_pages %}
-        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-            <small class="text-muted">Showing {{ page_obj|length }} patient registration request(s)</small>
+        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3 border-top">
+            <small class="text-muted fw-medium">Showing {{ page_obj|length }} patient registration request(s)</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     {% if page_obj.has_previous %}
                     <li class="page-item">
-                        <a class="page-link"
-                            href="?status={{ status_filter }}&page={{ page_obj.previous_page_number }}">‹</a>
+                        <a class="page-link rounded-3 px-2.5 py-1.5" href="?status={{ status_filter }}&page={{ page_obj.previous_page_number }}">‹</a>
                     </li>
                     {% endif %}
                     {% for n in page_obj.paginator.page_range %}
                     <li class="page-item {% if page_obj.number == n %}active{% endif %}">
-                        <a class="page-link" href="?status={{ status_filter }}&page={{ n }}">{{ n }}</a>
+                        <a class="page-link rounded-3 mx-0.5 px-2.5 py-1.5 fw-bold" href="?status={{ status_filter }}&page={{ n }}">{{ n }}</a>
                     </li>
                     {% endfor %}
                     {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link"
-                            href="?status={{ status_filter }}&page={{ page_obj.next_page_number }}">›</a>
+                        <a class="page-link rounded-3 px-2.5 py-1.5" href="?status={{ status_filter }}&page={{ page_obj.next_page_number }}">›</a>
                     </li>
                     {% endif %}
                 </ul>
@@ -647,126 +324,125 @@
     </div>
 </div>
 
-<!--  Appointment Booking Requests (/book/ flow)            -->
-<!-- ══════════════════════════════════════════════════════ -->
+<!-- ── SECTION 2: Appointment Booking Requests (/book/ flow) ── -->
 <div class="mt-4 mb-5" id="appointment-requests-section">
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h5 class="fw-bold mb-0 text-primary d-flex align-items-center">
+        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center">
             <i class="bi bi-calendar2-check text-warning me-2"></i>Appointment Booking Requests
             {% if appt_pending > 0 %}
-            <span class="badge bg-warning text-dark ms-2" style="font-size:13px;">{{ appt_pending }} pending</span>
+            <span class="badge bg-warning text-dark ms-2" style="font-size:12px;">{{ appt_pending }} pending</span>
             {% endif %}
         </h5>
     </div>
 
     <!-- Appointment Stat Cards -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-4">
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #ffc107 !important;">
-                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Pending Approval</p>
-                <h3 class="mb-0 fw-bold text-warning">{{ appt_pending }}</h3>
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="border-left:4px solid #ffc107 !important;">
+                <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size:11px; letter-spacing: 0.5px;">Pending Approval</p>
+                <h4 class="mb-0 fw-bold text-warning">{{ appt_pending }}</h4>
             </div>
         </div>
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #198754 !important;">
-                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Accepted</p>
-                <h3 class="mb-0 fw-bold text-success">{{ appt_accepted }}</h3>
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="border-left:4px solid #198754 !important;">
+                <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size:11px; letter-spacing: 0.5px;">Accepted</p>
+                <h4 class="mb-0 fw-bold text-success">{{ appt_accepted }}</h4>
             </div>
         </div>
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm p-3" style="border-left:4px solid #dc3545 !important;">
-                <p class="text-muted small mb-1 text-uppercase" style="font-size:11px">Rejected</p>
-                <h3 class="mb-0 fw-bold text-danger">{{ appt_rejected }}</h3>
+            <div class="card border-0 shadow-sm p-3 rounded-4" style="border-left:4px solid #dc3545 !important;">
+                <p class="text-muted small mb-1 text-uppercase fw-semibold" style="font-size:11px; letter-spacing: 0.5px;">Rejected</p>
+                <h4 class="mb-0 fw-bold text-danger">{{ appt_rejected }}</h4>
             </div>
         </div>
     </div>
 
     <!-- Appointment Status Filter -->
-    <div class="card border-0 shadow-sm mb-3">
+    <div class="card border-0 shadow-sm mb-3 rounded-4">
         <div class="card-body py-3">
-            <form method="get" class="row g-2 align-items-end">
+            <form method="get" class="row g-2 align-items-center">
                 {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
                 {% if status_filter and status_filter != 'all' %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
                 {% if disease_filter %}<input type="hidden" name="disease" value="{{ disease_filter }}">{% endif %}
                 <div class="col-auto">
-                    <label class="form-label small text-muted mb-1">Filter appointment requests:</label>
+                    <label class="form-label small text-muted mb-0 fw-bold">Filter appointment requests:</label>
                 </div>
                 <div class="col-6 col-md-3">
-                    <select name="appt_status" class="form-select form-select-sm">
-                        <option value="pending"  {% if appt_status_filter == 'pending'  %}selected{% endif %}>Pending</option>
+                    <select name="appt_status" class="form-select form-select-sm fw-semibold">
+                        <option value="pending" {% if appt_status_filter == 'pending' %}selected{% endif %}>Pending</option>
                         <option value="accepted" {% if appt_status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
                         <option value="rejected" {% if appt_status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
-                        <option value="all"      {% if appt_status_filter == 'all'      %}selected{% endif %}>All</option>
+                        <option value="all" {% if appt_status_filter == 'all' %}selected{% endif %}>All Requests</option>
                     </select>
                 </div>
                 <div class="col-auto">
-                    <button type="submit" class="btn btn-warning btn-sm text-dark">Apply</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold px-3 rounded-3">Apply Filter</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Appointments Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white border-0 py-3 d-flex align-items-center justify-content-between">
-            <h6 class="mb-0 fw-semibold d-flex align-items-center">
-                <i class="bi bi-calendar-event me-2 text-warning"></i>Appointment Requests
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white border-0 py-3.5 d-flex align-items-center justify-content-between border-bottom">
+            <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
+                <i class="bi bi-calendar-event me-2 text-warning"></i>Appointment Requests List
             </h6>
-            <span class="badge bg-warning bg-opacity-15 text-warning border border-warning">
-                {{ appt_pending }} awaiting approval
+            <span class="badge bg-warning bg-opacity-10 text-dark border border-warning border-opacity-10 px-2.5 py-1.5 fw-bold" style="border-radius: 30px;">
+                {{ appt_pending }} awaiting review
             </span>
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr class="text-uppercase text-muted font-monospace" style="font-size: 11px; letter-spacing: 0.8px;">
-                        <th class="ps-3 py-3">Patient Name</th>
-                        <th class="py-3">Disease</th>
+                        <th class="ps-4 py-3">Patient Name</th>
+                        <th class="py-3">Disease / Speciality</th>
                         <th class="py-3">Phone</th>
                         <th class="py-3">Email</th>
                         <th class="py-3">Slot Date</th>
-                        <th class="py-3">Time</th>
+                        <th class="py-3">Time Range</th>
                         <th class="text-center py-3">Status</th>
-                        <th class="text-end pe-3 py-3">Actions</th>
+                        <th class="text-end pe-4 py-3">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for appt in all_appointments %}
                     <tr>
-                        <td class="ps-3 py-3 fw-semibold text-dark">{{ appt.patient_name }}</td>
-                        <td class="py-3">
-                            <span class="badge rounded-pill px-2.5 py-1 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10" style="font-size: 11px;">
+                        <td class="ps-4 py-3.5 fw-bold text-dark small">{{ appt.patient_name }}</td>
+                        <td class="py-3.5">
+                            <span class="badge rounded-pill px-2.5 py-1.5 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-10" style="font-size: 11px;">
                                 {{ appt.disease|default:"—" }}
                             </span>
                         </td>
-                        <td class="py-3 text-muted fw-semibold" style="font-size: 12px;">{{ appt.patient_phone }}</td>
-                        <td class="py-3 text-muted">{{ appt.patient_email|default:"—" }}</td>
-                        <td class="py-3 fw-semibold text-dark">{{ appt.slot.date|date:"M d, Y" }}</td>
-                        <td class="py-3 text-muted" style="white-space:nowrap;">
-                            {{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}
+                        <td class="py-3.5 text-muted fw-semibold small" style="font-size: 12px;">{{ appt.patient_phone }}</td>
+                        <td class="py-3.5 text-muted small">{{ appt.patient_email|default:"—" }}</td>
+                        <td class="py-3.5 fw-bold text-dark small">{{ appt.slot.date|date:"M d, Y" }}</td>
+                        <td class="py-3.5 text-muted small" style="white-space:nowrap;">
+                            <span class="text-primary fw-medium">{{ appt.slot.start_time|time:"g:i A" }} – {{ appt.slot.end_time|time:"g:i A" }}</span>
                         </td>
-                        <td class="text-center py-3">
-                            <span class="badge rounded-pill px-2.5 py-1
-                            {% if appt.status == 'accepted' %}bg-success bg-opacity-10 text-success border border-success border-opacity-20
-                            {% elif appt.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20
-                            {% else %}bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20{% endif %}"
-                            style="font-size: 11px; font-weight: 600; letter-spacing: 0.3px;">
+                        <td class="text-center py-3.5">
+                            <span class="badge rounded-pill px-2.5 py-1.5
+                                {% if appt.status == 'accepted' %}bg-success bg-opacity-10 text-success border border-success border-opacity-20
+                                {% elif appt.status == 'rejected' %}bg-danger bg-opacity-10 text-danger border border-danger border-opacity-20
+                                {% else %}bg-warning bg-opacity-10 text-warning border border-warning border-opacity-20{% endif %}"
+                                style="font-size: 11px; font-weight: 600; letter-spacing: 0.3px;">
                                 {{ appt.get_status_display }}
                             </span>
                         </td>
-                        <td class="text-end pe-3 py-3" style="white-space: nowrap;">
+                        <td class="text-end pe-4 py-3.5" style="white-space: nowrap;">
                             <div class="d-inline-flex gap-1.5">
                                 {% if appt.status == 'pending' %}
                                 <form method="post" action="{% url 'accept_appointment' appt.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-success" style="padding:2px 8px;font-size:11px"
+                                    <button type="submit" class="btn btn-xs btn-success border-0 fw-bold px-3 py-1.5" style="font-size:11px; border-radius: 8px;"
                                             onclick="return confirm('Accept appointment for {{ appt.patient_name }}? An email will be sent.')">
                                         <i class="bi bi-check2"></i> Accept
                                     </button>
                                 </form>
                                 <form method="post" action="{% url 'reject_appointment' appt.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <button type="submit" class="btn btn-xs btn-danger" style="padding:2px 8px;font-size:11px"
+                                    <button type="submit" class="btn btn-xs btn-outline-danger border-2 fw-bold px-3 py-1.5" style="font-size:11px; border-radius: 8px;"
                                             onclick="return confirm('Reject appointment for {{ appt.patient_name }}? An email will be sent.')">
                                         <i class="bi bi-x"></i> Reject
                                     </button>
@@ -780,7 +456,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="8" class="text-center text-muted py-5">
-                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2 text-muted text-opacity-40"></i>
                             No appointment requests{% if appt_status_filter != 'all' %} with status "{{ appt_status_filter }}"{% endif %}.
                         </td>
                     </tr>
@@ -791,20 +467,24 @@
 
         <!-- Pagination -->
         {% if appt_page_obj.has_other_pages %}
-        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-            <small class="text-muted">Showing {{ all_appointments|length }} appointment request(s)</small>
+        <div class="card-footer bg-white border-0 d-flex flex-wrap justify-content-between align-items-center gap-2 py-3 border-top">
+            <small class="text-muted fw-medium">Showing {{ all_appointments|length }} appointment request(s)</small>
             <nav>
                 <ul class="pagination pagination-sm mb-0">
                     {% if appt_page_obj.has_previous %}
-                        <li class="page-item"><a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.previous_page_number }}">‹</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-3 px-2.5 py-1.5" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.previous_page_number }}">‹</a>
+                        </li>
                     {% endif %}
                     {% for n in appt_page_obj.paginator.page_range %}
                         <li class="page-item {% if appt_page_obj.number == n %}active{% endif %}">
-                            <a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ n }}">{{ n }}</a>
+                            <a class="page-link rounded-3 mx-0.5 px-2.5 py-1.5 fw-bold" href="?appt_status={{ appt_status_filter }}&appt_page={{ n }}">{{ n }}</a>
                         </li>
                     {% endfor %}
                     {% if appt_page_obj.has_next %}
-                        <li class="page-item"><a class="page-link" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.next_page_number }}">›</a></li>
+                        <li class="page-item">
+                            <a class="page-link rounded-3 px-2.5 py-1.5" href="?appt_status={{ appt_status_filter }}&appt_page={{ appt_page_obj.next_page_number }}">›</a>
+                        </li>
                     {% endif %}
                 </ul>
             </nav>
@@ -812,55 +492,11 @@
         {% endif %}
     </div>
 </div>
-    </div>
-</div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // ── AJAX: dynamic doctor slots loading on select ──
-    document.querySelectorAll('.doctor-select').forEach(select => {
-        select.addEventListener('change', function () {
-            const patientId = this.dataset.patientId;
-            const doctorId = this.value;
-            const slotSelect = document.getElementById(`slot-select-${patientId}`);
-
-            if (!doctorId) {
-                slotSelect.innerHTML = '<option value="">Select Slot...</option>';
-                slotSelect.setAttribute('disabled', 'true');
-                return;
-            }
-
-            slotSelect.removeAttribute('disabled');
-            slotSelect.innerHTML = '<option value="">Loading slots...</option>';
-
-            fetch(`/ajax/slots/?doctor_id=${doctorId}`)
-                .then(r => r.json())
-                .then(data => {
-                    slotSelect.innerHTML = '';
-                    if (!data.slots || !data.slots.length) {
-                        slotSelect.innerHTML = '<option value="">No slots available</option>';
-                        slotSelect.setAttribute('disabled', 'true');
-                        return;
-                    }
-                    data.slots.forEach(slot => {
-                        if (!slot.is_full) {
-                            slotSelect.innerHTML += `<option value="${slot.id}">${slot.date} · ${slot.start_time} - ${slot.end_time} (${slot.slots_left} left)</option>`;
-                        }
-                    });
-                    if (slotSelect.innerHTML === '') {
-                        slotSelect.innerHTML = '<option value="">No slots available</option>';
-                        slotSelect.setAttribute('disabled', 'true');
-                    }
-                })
-                .catch(err => {
-                    console.error("Failed to load slots", err);
-                    slotSelect.innerHTML = '<option value="">Error loading slots</option>';
-                });
-        });
-    });
-
     function availDot(av) {
         if (av === 'available') return '🟢';
         if (av === 'on_leave') return '🟡';
@@ -873,13 +509,9 @@
 
         if (data.stats) {
             const el = (id) => document.getElementById(id);
-            if(el('stat-total'))    el('stat-total').textContent    = data.stats.total_patients;
-            if(el('stat-accepted')) el('stat-accepted').textContent = data.stats.accepted_patients;
-            if(el('stat-rejected')) el('stat-rejected').textContent = data.stats.rejected_patients;
-            if(el('stat-pending'))  el('stat-pending').textContent  = data.stats.pending_patients;
-            if(el('dash-total-doctors'))    el('dash-total-doctors').textContent    = data.stats.total_doctors;
-            if(el('dash-available-doctors'))el('dash-available-doctors').textContent = data.stats.available_doctors;
-            if(el('dash-onleave-doctors'))  el('dash-onleave-doctors').textContent  = data.stats.on_leave_doctors;
+            if(el('dash-total-doctors'))     el('dash-total-doctors').textContent     = data.stats.total_doctors;
+            if(el('dash-available-doctors')) el('dash-available-doctors').textContent = data.stats.available_doctors;
+            if(el('dash-onleave-doctors'))   el('dash-onleave-doctors').textContent   = data.stats.on_leave_doctors;
         }
         if (data.doctors) {
             data.doctors.forEach(doc => {
@@ -913,4 +545,20 @@
     };
     sse.onerror = () => sse.close();
 </script>
+
+<style>
+    .hover-bg {
+        transition: background-color 0.2s ease-in-out;
+    }
+    .hover-bg:hover {
+        background-color: rgba(13, 110, 253, 0.02) !important;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+</style>
 {% endblock %}
