@@ -124,7 +124,9 @@
                                 {{ slot.start_time|time:"g:i A" }} &ndash; {{ slot.end_time|time:"g:i A" }}
                             </td>
                             <td>
-                                {% if slot.is_present %}
+                                {% if slot.date|date:"Y-m-d" in leave_dates %}
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>On Leave</span>
+                                {% elif slot.is_present %}
                                     <span class="badge bg-success"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Active</span>
                                 {% else %}
                                     <span class="badge bg-danger"><i class="bi bi-circle-fill me-1" style="font-size:8px"></i>Inactive</span>
