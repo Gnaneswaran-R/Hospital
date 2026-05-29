@@ -401,7 +401,7 @@ def _send_patient_email(patient, accepted=True):
 def accept_patient(request, pk):
     patient = get_object_or_404(Patient, pk=pk)
     if request.method == 'POST':
-<<<<<<< HEAD
+        # Admin must select a doctor before approving
         doctor_id = request.POST.get('doctor_id')
         if doctor_id:
             doctor = get_object_or_404(Doctor, pk=doctor_id)
@@ -419,16 +419,16 @@ def accept_patient(request, pk):
                 next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
                 return redirect(next_url)
             patient.assigned_doctor = doctor
+        elif not patient.assigned_doctor:
+            messages.error(request, f'Please select a doctor for {patient.name} before approving.')
+            next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
+            return redirect(next_url)
             
         patient.status = Patient.STATUS_ACCEPTED
         patient.save()
-        
         _send_patient_email(patient, accepted=True)
-        if patient.assigned_doctor:
-            messages.success(request, f"Patient {patient.name} has been assigned to Dr. {patient.assigned_doctor.name} and accepted successfully.")
-        else:
-            messages.success(request, f"Patient {patient.name} has been accepted and notified by email.")
-            
+        messages.success(request, f'Patient {patient.name} has been accepted (Dr. {patient.assigned_doctor.name}) and notified by email.')
+        
         next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
         return redirect(next_url)
 
@@ -436,22 +436,6 @@ def accept_patient(request, pk):
     patient.save()
     _send_patient_email(patient, accepted=True)
     messages.success(request, f"Patient {patient.name} has been accepted and notified by email.")
-    
-=======
-        # Admin must select a doctor before approving
-        doctor_id = request.POST.get('doctor_id')
-        if doctor_id:
-            doctor = get_object_or_404(Doctor, pk=doctor_id)
-            patient.assigned_doctor = doctor
-        elif not patient.assigned_doctor:
-            messages.error(request, f'Please select a doctor for {patient.name} before approving.')
-            next_url = request.POST.get('next') or 'dashboard'
-            return redirect(next_url)
-        patient.status = Patient.STATUS_ACCEPTED
-        patient.save()
-        _send_patient_email(patient, accepted=True)
-        messages.success(request, f'Patient {patient.name} has been accepted (Dr. {patient.assigned_doctor.name}) and notified by email.')
->>>>>>> origin/main
     next_url = request.POST.get('next') or request.GET.get('next') or 'dashboard'
     return redirect(next_url)
 
